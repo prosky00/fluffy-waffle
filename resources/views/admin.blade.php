@@ -368,9 +368,21 @@
             <label class="form-label">Tartalom (Markdown támogatott)</label>
             <textarea name="content" id="annContent" class="form-textarea" rows="8" required></textarea>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-            <input type="checkbox" name="post_to_discord" value="1" id="postDiscord">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <input type="checkbox" name="post_to_discord" value="1" id="postDiscord" onchange="document.getElementById('discordMentionRow').style.display=this.checked?'flex':'none'">
             <label for="postDiscord" style="color:#8b949e;font-size:13px">Küldés Discord-ra is</label>
+        </div>
+        <div id="discordMentionRow" style="display:none;align-items:center;gap:8px;margin-bottom:12px;padding-left:22px">
+            <label class="form-label" style="margin:0;white-space:nowrap">Megemlítés:</label>
+            <select name="mention_role_id" class="form-input" style="max-width:260px">
+                <option value="">Nincs megemlítés</option>
+                <option value="@everyone">@everyone</option>
+                @foreach($discordRoles as $role)
+                    @if($role['name'] !== '@everyone')
+                    <option value="{{ $role['id'] }}">@{{ $role['name'] }}</option>
+                    @endif
+                @endforeach
+            </select>
         </div>
         <button type="submit" class="btn btn-primary">Közzététel</button>
     </form>

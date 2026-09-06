@@ -152,7 +152,7 @@
         <div class="ann-card">
             <div class="ann-header">
                 <div class="ann-icon">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9v6h3L18 20V4L6 9H3z"/></svg>
                 </div>
                 <div class="ann-meta-top">
                     <div class="ann-title">{{ $ann->title }}</div>

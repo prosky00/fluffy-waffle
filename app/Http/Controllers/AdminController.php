@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\Conversation;
 use App\Models\Department;
 use App\Models\FactionSetting;
 use App\Models\Message;
@@ -144,6 +145,14 @@ class AdminController extends Controller
             if ($user->discord_id) {
                 app(DiscordService::class)->sendDm($user->discord_id, "🎖️ Faction értesítő: {$msg}");
             }
+
+            // Sync rank-based conversation membership
+            if ($oldRankId) {
+                $oldConv = Conversation::where('type', 'RANK')->where('rank_id', $oldRankId)->first();
+                if ($oldConv) $oldConv->participants()->detach($user->id);
+            }
+            $newConv = Conversation::where('type', 'RANK')->where('rank_id', $data['rank_id'])->first();
+            if ($newConv) $newConv->participants()->syncWithoutDetaching([$user->id]);
         }
         if (!empty($data['department_id']) && (int)$data['department_id'] !== (int)$oldDeptId) {
             $deptName = Department::find($data['department_id'])?->name ?? 'ismeretlen';
@@ -209,6 +218,7 @@ class AdminController extends Controller
             'title'           => 'required|string|max:255',
             'content'         => 'required|string',
             'post_to_discord' => 'nullable|boolean',
+            'mention_role_id' => 'nullable|string|max:50',
         ]);
 
         $announcement = Announcement::create([
@@ -220,7 +230,8 @@ class AdminController extends Controller
         if (!empty($data['post_to_discord'])) {
             $channelId   = config('services.discord.announcement_channel_id');
             $factionName = FactionSetting::singleton()->name ?? 'Faction';
-            app(DiscordService::class)->sendAnnouncement($channelId, $data['title'], strip_tags($data['content']), $factionName);
+            $mention     = $data['mention_role_id'] ?? '';
+            app(DiscordService::class)->sendAnnouncement($channelId, $data['title'], strip_tags($data['content']), $factionName, $mention);
         }
 
         return $this->adminTab('announcements', 'Felhívás közzétéve.');
