@@ -303,10 +303,20 @@
 
         <div class="nav-group">
             <div class="nav-category">Alosztály / Személyes</div>
-            <a href="{{ route('alosztalyom') }}" class="nav-link {{ request()->is('alosztalyom*') ? 'active' : '' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                Alosztályom
-            </a>
+            @php $_myDepts = auth()->user()->departments()->orderBy('name')->get(); @endphp
+            @if($_myDepts->count() > 1)
+                @foreach($_myDepts as $_d)
+                <a href="{{ route('alosztalyom') }}?dept={{ $_d->id }}" class="nav-link {{ request()->is('alosztalyom*') && request('dept') == $_d->id ? 'active' : '' }}">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    {{ $_d->short_name ?? $_d->name }}
+                </a>
+                @endforeach
+            @else
+                <a href="{{ route('alosztalyom') }}{{ $_myDepts->isNotEmpty() ? '?dept='.$_myDepts->first()->id : '' }}" class="nav-link {{ request()->is('alosztalyom*') ? 'active' : '' }}">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Alosztályom
+                </a>
+            @endif
         </div>
 
         @if(auth()->user()->is_admin || auth()->user()->is_supervisor)

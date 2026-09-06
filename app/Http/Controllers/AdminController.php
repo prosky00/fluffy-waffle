@@ -134,7 +134,8 @@ class AdminController extends Controller
             }
         }
 
-        if (isset($data['rank_id']) && $data['rank_id'] !== $oldRankId) {
+        // Only notify when the value actually changed (cast both sides — form sends strings, DB returns ints)
+        if (!empty($data['rank_id']) && (int)$data['rank_id'] !== (int)$oldRankId) {
             $rankName = Rank::find($data['rank_id'])?->name ?? 'ismeretlen';
             $msg = "Rangod megváltozott: {$rankName}";
             if ($user->wantsNotification('general')) {
@@ -144,7 +145,7 @@ class AdminController extends Controller
                 app(DiscordService::class)->sendDm($user->discord_id, "🎖️ Faction értesítő: {$msg}");
             }
         }
-        if (isset($data['department_id']) && $data['department_id'] !== $oldDeptId) {
+        if (!empty($data['department_id']) && (int)$data['department_id'] !== (int)$oldDeptId) {
             $deptName = Department::find($data['department_id'])?->name ?? 'ismeretlen';
             $msg = "Elsődleges alosztályod megváltozott: {$deptName}";
             if ($user->wantsNotification('general')) {

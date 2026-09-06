@@ -12,11 +12,24 @@ class AlosztalyomController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if (!$user->department_id) {
-            return $this->view('alosztalyom', ['department' => null, 'members' => collect(), 'canManage' => false]);
+
+        // Determine which dept to show: ?dept= param, then primary, then first pivot dept
+        $deptId = request('dept')
+            ?: $user->department_id
+            ?: $user->departments()->first()?->id;
+
+        if (!$deptId) {
+            return $this->view('alosztalyom', ['department' => null, 'canManage' => false]);
         }
 
-        $department = Department::with(['members.rank', 'members.departmentRank', 'ranks'])->findOrFail($user->department_id);
+        // Must belong to the dept (or be admin)
+        $isMember = (int)$user->department_id === (int)$deptId
+            || $user->departments()->where('departments.id', $deptId)->exists()
+            || $user->is_admin;
+
+        if (!$isMember) abort(403);
+
+        $department = Department::with(['members.rank', 'members.departmentRank', 'ranks'])->findOrFail($deptId);
         $canManage  = $user->is_admin || $user->is_department_leader || $user->is_department_deputy;
 
         return $this->view('alosztalyom', compact('department', 'canManage'));
