@@ -187,7 +187,17 @@
                     </div>
                     <div><label class="form-label">Utolsó előléptetés</label><input type="date" name="rank_up_date" class="form-input" value="{{ $u->rank_up_date?->format('Y-m-d') }}" style="font-size:13px"></div>
                     <div>
-                        <label class="form-label">Alosztály</label>
+                        <label class="form-label">Értesítések</label>
+                        <select name="notification_preference" class="form-select">
+                            <option value="ALL" {{ ($u->notification_preference ?? 'ALL')==='ALL' ? 'selected' : '' }}>Minden értesítés</option>
+                            <option value="MESSAGES_ONLY" {{ ($u->notification_preference ?? '')==='MESSAGES_ONLY' ? 'selected' : '' }}>Csak üzenetek</option>
+                        </select>
+                    </div>
+                </div>
+                {{-- Department: 2-column selector --}}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                    <div>
+                        <label class="form-label">Elsődleges alosztály</label>
                         <select name="department_id" class="form-select" id="dept_{{ $u->id }}" onchange="filterDeptRanks({{ $u->id }})">
                             <option value="">— nincs —</option>
                             @foreach($departments as $d)<option value="{{ $d->id }}" {{ $u->department_id===$d->id?'selected':'' }}>{{ $d->name }}</option>@endforeach
@@ -204,29 +214,27 @@
                             @endforeach
                         </select>
                     </div>
-                    <div>
-                        <label class="form-label">Alosztály tagság (több is lehetséges)</label>
-                        <select name="department_ids[]" class="form-select" multiple style="height:90px;font-size:12px">
-                            @foreach($departments as $d)
-                            <option value="{{ $d->id }}" {{ $u->departments->contains('id',$d->id)?'selected':'' }}>{{ $d->name }}</option>
-                            @endforeach
-                        </select>
-                        <div style="color:oklch(0.556 0 0);font-size:10px;margin-top:2px">Ctrl+kattintás = több kijelölés</div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end">
-                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_department_leader" value="1" {{ $u->is_department_leader?'checked':'' }}> Alosztályvezető</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_department_deputy" value="1" {{ $u->is_department_deputy?'checked':'' }}> Helyettes</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_supervisor" value="1" {{ $u->is_supervisor?'checked':'' }}> Szupervisor</label>
-                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_admin" value="1" {{ $u->is_admin?'checked':'' }}> Admin</label>
-                    </div>
-                    <div>
-                        <label class="form-label">Értesítések</label>
-                        <select name="notification_preference" class="form-select">
-                            <option value="ALL" {{ ($u->notification_preference ?? 'ALL')==='ALL' ? 'selected' : '' }}>Minden értesítés</option>
-                            <option value="MESSAGES_ONLY" {{ ($u->notification_preference ?? '')==='MESSAGES_ONLY' ? 'selected' : '' }}>Csak üzenetek</option>
-                        </select>
+                </div>
+                {{-- Multi-dept membership checkboxes --}}
+                <div style="margin-bottom:10px">
+                    <label class="form-label">Alosztály tagságok</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;padding:10px 12px;background:var(--bg);border:1px solid var(--border)">
+                        @foreach($departments as $d)
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:oklch(0.708 0 0);padding:3px 0;cursor:pointer">
+                            <input type="checkbox" name="department_ids[]" value="{{ $d->id }}" {{ $u->departments->contains('id',$d->id)?'checked':'' }}>
+                            {{ $d->name }}@if($d->short_name)<span style="color:oklch(0.556 0 0);font-size:11px;margin-left:4px">{{ $d->short_name }}</span>@endif
+                        </label>
+                        @endforeach
                     </div>
                 </div>
+                {{-- Role flags --}}
+                <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border)">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_department_leader" value="1" {{ $u->is_department_leader?'checked':'' }}> Alosztályvezető</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_department_deputy" value="1" {{ $u->is_department_deputy?'checked':'' }}> Helyettes</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_supervisor" value="1" {{ $u->is_supervisor?'checked':'' }}> Szupervisor</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_admin" value="1" {{ $u->is_admin?'checked':'' }}> Admin</label>
+                </div>
+
                 <div style="display:flex;gap:8px">
                     <button type="submit" class="btn btn-primary" style="font-size:12px;padding:6px 14px">Mentés</button>
                     <button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="toggleUserEdit({{ $u->id }})">Bezárás</button>
@@ -360,9 +368,21 @@
             <label class="form-label">Tartalom (Markdown támogatott)</label>
             <textarea name="content" id="annContent" class="form-textarea" rows="8" required></textarea>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-            <input type="checkbox" name="post_to_discord" value="1" id="postDiscord">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <input type="checkbox" name="post_to_discord" value="1" id="postDiscord" onchange="document.getElementById('discordMentionRow').style.display=this.checked?'flex':'none'">
             <label for="postDiscord" style="color:#8b949e;font-size:13px">Küldés Discord-ra is</label>
+        </div>
+        <div id="discordMentionRow" style="display:none;align-items:center;gap:8px;margin-bottom:12px;padding-left:22px">
+            <label class="form-label" style="margin:0;white-space:nowrap">Megemlítés:</label>
+            <select name="mention_role_id" class="form-input" style="max-width:260px">
+                <option value="">Nincs megemlítés</option>
+                <option value="@everyone">@everyone</option>
+                @foreach($discordRoles as $role)
+                    @if($role['name'] !== '@everyone')
+                    <option value="{{ $role['id'] }}">{{ $role['name'] }}</option>
+                    @endif
+                @endforeach
+            </select>
         </div>
         <button type="submit" class="btn btn-primary">Közzététel</button>
     </form>

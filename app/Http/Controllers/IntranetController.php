@@ -28,8 +28,9 @@ class IntranetController extends Controller
         $user = auth()->user();
         $conversation = Conversation::with(['participants', 'rank'])->findOrFail($id);
 
-        if (!$conversation->participants->contains('id', $user->id) && !$user->is_admin) {
-            abort(403);
+        $isMember = $conversation->participants->contains('id', $user->id);
+        if (!$isMember && !$user->is_admin) {
+            if (!$this->autoJoin($conversation, $user)) abort(403);
         }
 
         $messages = Message::with('author')
@@ -48,10 +49,11 @@ class IntranetController extends Controller
     public function pollMessages($id)
     {
         $user = auth()->user();
-        $conversation = Conversation::findOrFail($id);
+        $conversation = Conversation::with('participants')->findOrFail($id);
 
-        if (!$conversation->participants->contains('id', $user->id) && !$user->is_admin) {
-            abort(403);
+        $isMember = $conversation->participants->contains('id', $user->id);
+        if (!$isMember && !$user->is_admin) {
+            if (!$this->autoJoin($conversation, $user)) abort(403);
         }
 
         $after = request('after');
@@ -107,8 +109,9 @@ class IntranetController extends Controller
         $user = auth()->user();
 
         $conversation = Conversation::with('participants')->findOrFail($id);
-        if (!$conversation->participants->contains('id', $user->id)) {
-            abort(403);
+        $isMember = $conversation->participants->contains('id', $user->id);
+        if (!$isMember) {
+            if (!$this->autoJoin($conversation, $user)) abort(403);
         }
 
         $message = Message::create([
@@ -176,14 +179,33 @@ class IntranetController extends Controller
 
         return Conversation::with(['participants', 'department', 'messages' => fn($q) => $q->latest()->limit(1)])
             ->where(function ($q) use ($user, $deptIds) {
-                // conversations the user is an explicit participant in
+                // explicit participant
                 $q->whereHas('participants', fn($q2) => $q2->where('users.id', $user->id));
-                // OR official department channels for any dept the user belongs to
+                // OR official dept channel the user belongs to (auto-joins on open)
                 if ($deptIds->isNotEmpty()) {
                     $q->orWhereIn('department_id', $deptIds);
+                }
+                // OR rank channel matching the user's current rank (auto-joins on open)
+                if ($user->rank_id) {
+                    $q->orWhere(fn($q2) => $q2->where('type', 'RANK')->where('rank_id', $user->rank_id));
                 }
             })
             ->latest()
             ->get();
+    }
+
+    private function autoJoin(Conversation $conversation, User $user): bool
+    {
+        // Dept-backed GROUP conversation
+        if ($conversation->department_id && $user->departments()->where('departments.id', $conversation->department_id)->exists()) {
+            $conversation->participants()->syncWithoutDetaching([$user->id]);
+            return true;
+        }
+        // RANK conversation matching the user's current rank
+        if ($conversation->type === 'RANK' && $conversation->rank_id && (int)$user->rank_id === (int)$conversation->rank_id) {
+            $conversation->participants()->syncWithoutDetaching([$user->id]);
+            return true;
+        }
+        return false;
     }
 }

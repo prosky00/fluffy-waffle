@@ -72,6 +72,11 @@ class InstallController extends Controller
         // Also create faction settings row
         \App\Models\FactionSetting::firstOrCreate([], ['name' => $data['faction_name']]);
 
+        // Create storage symlink so uploaded files are publicly accessible
+        if (!file_exists(public_path('storage'))) {
+            Artisan::call('storage:link');
+        }
+
         // Mark as installed
         file_put_contents(storage_path('installed.lock'), now()->toIso8601String());
 

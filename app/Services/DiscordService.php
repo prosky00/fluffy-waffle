@@ -45,7 +45,7 @@ class DiscordService
         }
     }
 
-    public function sendAnnouncement(string $channelId, string $title, string $description, string $authorName = ''): bool
+    public function sendAnnouncement(string $channelId, string $title, string $description, string $authorName = '', string $mention = ''): bool
     {
         $embed = [
             'title'       => $title,
@@ -54,7 +54,15 @@ class DiscordService
             'timestamp'   => now()->toIso8601String(),
         ];
         if ($authorName) $embed['author'] = ['name' => $authorName];
-        return $this->sendChannelMessage($channelId, '', $embed);
+
+        $content = '';
+        if ($mention === '@everyone') {
+            $content = '@everyone';
+        } elseif ($mention) {
+            $content = "<@&{$mention}>";
+        }
+
+        return $this->sendChannelMessage($channelId, $content, $embed);
     }
 
     public function editMessage(string $channelId, string $messageId, array $embed): bool

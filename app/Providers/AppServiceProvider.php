@@ -14,6 +14,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Create public/storage symlink if the app is installed but the link is missing
+        if (file_exists(storage_path('installed.lock')) && !file_exists(public_path('storage'))) {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('storage:link');
+            } catch (\Throwable) {}
+        }
+
         $this->app['events']->listen(SocialiteWasCalled::class, function (SocialiteWasCalled $event) {
             $event->extendSocialite('discord', DiscordProvider::class);
         });

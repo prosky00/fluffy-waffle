@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use App\Models\DepartmentRank;
 use Illuminate\Http\Request;
 
 class AlosztalyAdatbazisController extends Controller
@@ -20,7 +21,9 @@ class AlosztalyAdatbazisController extends Controller
             'short_name'  => 'required|string|max:20',
             'max_members' => 'required|integer|min:0',
         ]);
-        Department::create($data);
+        $dept = Department::create($data);
+        // Auto-create a default "Alosztályvezető" rank for every new department
+        DepartmentRank::create(['department_id' => $dept->id, 'name' => 'Alosztályvezető', 'level' => 1]);
         return back()->with('success', 'Alosztály létrehozva.');
     }
 

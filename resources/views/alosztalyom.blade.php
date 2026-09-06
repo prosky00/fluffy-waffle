@@ -67,6 +67,7 @@
                         <form method="POST" action="/alosztalyom/members/{{ $m->id }}" style="display:flex;gap:4px;align-items:center">
                             @csrf
                             @method('PUT')
+                            <input type="hidden" name="dept_id" value="{{ $department->id }}">
                             <select name="department_rank_id" class="form-select" style="padding:4px 8px;font-size:12px;width:auto">
                                 <option value="">— rang —</option>
                                 @foreach($department->ranks as $dr)
@@ -90,6 +91,7 @@
         <div class="card" style="margin-bottom:16px">
             <form method="POST" action="/alosztalyom/rules">
                 @csrf
+                <input type="hidden" name="dept_id" value="{{ $department->id }}">
                 <div style="margin-bottom:12px">
                     <label class="form-label">Szabályzat szövege</label>
                     <textarea name="rules" class="form-textarea" rows="12">{{ strip_tags($department->rules ?? '') }}</textarea>
@@ -120,6 +122,7 @@
                     <form method="POST" action="/alosztalyom/ranks/{{ $dr->id }}" style="display:contents">
                         @csrf
                         @method('PUT')
+                        <input type="hidden" name="dept_id" value="{{ $department->id }}">
                         <td><input type="text" name="name" class="form-input" value="{{ $dr->name }}" style="padding:4px 8px;font-size:13px"></td>
                         <td><input type="number" name="level" class="form-input" value="{{ $dr->level }}" style="padding:4px 8px;font-size:13px;width:80px"></td>
                         <td style="display:flex;gap:4px">
@@ -128,6 +131,7 @@
                             <form method="POST" action="/alosztalyom/ranks/{{ $dr->id }}" onsubmit="return confirm('Törlés?')">
                                 @csrf
                                 @method('DELETE')
+                                <input type="hidden" name="dept_id" value="{{ $department->id }}">
                                 <button type="submit" class="btn btn-danger" style="font-size:11px;padding:4px 8px">Törlés</button>
                             </form>
                         </td>
@@ -137,6 +141,7 @@
             </table>
             <form method="POST" action="/alosztalyom/ranks" style="display:flex;gap:8px;align-items:flex-end">
                 @csrf
+                <input type="hidden" name="dept_id" value="{{ $department->id }}">
                 <div><label class="form-label">Név</label><input type="text" name="name" class="form-input" required></div>
                 <div><label class="form-label">Szint</label><input type="number" name="level" class="form-input" value="0" style="width:80px"></div>
                 <button type="submit" class="btn btn-primary">Hozzáadás</button>
