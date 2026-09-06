@@ -19,8 +19,18 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer('*', function ($view) {
-            if (!$view->offsetExists('settings')) {
+            if ($view->offsetExists('settings')) {
+                return;
+            }
+            // Skip DB call before the app is installed (no DB file yet)
+            if (!file_exists(storage_path('installed.lock'))) {
+                $view->with('settings', new FactionSetting(['name' => 'Faction Dashboard']));
+                return;
+            }
+            try {
                 $view->with('settings', FactionSetting::singleton());
+            } catch (\Throwable $e) {
+                $view->with('settings', new FactionSetting(['name' => 'Faction Dashboard']));
             }
         });
     }
