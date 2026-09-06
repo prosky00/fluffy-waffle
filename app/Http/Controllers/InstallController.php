@@ -57,6 +57,10 @@ class InstallController extends Controller
         // Run migrations
         Artisan::call('migrate', ['--force' => true]);
 
+        // Clear any cached config/views so the new env is fully in effect
+        Artisan::call('config:clear');
+        Artisan::call('view:clear');
+
         // Create admin user
         User::create([
             'name'       => $data['admin_name'],
@@ -110,7 +114,7 @@ BROADCAST_CONNECTION=log
 FILESYSTEM_DISK=local
 QUEUE_CONNECTION=database
 
-CACHE_STORE=database
+CACHE_STORE=file
 
 VITE_APP_NAME="{$data['faction_name']}"
 
