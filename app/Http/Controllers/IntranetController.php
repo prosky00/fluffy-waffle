@@ -28,8 +28,14 @@ class IntranetController extends Controller
         $user = auth()->user();
         $conversation = Conversation::with(['participants', 'rank'])->findOrFail($id);
 
-        if (!$conversation->participants->contains('id', $user->id) && !$user->is_admin) {
-            abort(403);
+        $isMember = $conversation->participants->contains('id', $user->id);
+        if (!$isMember && !$user->is_admin) {
+            // Auto-join if user belongs to the backing department
+            if ($conversation->department_id && $user->departments()->where('departments.id', $conversation->department_id)->exists()) {
+                $conversation->participants()->syncWithoutDetaching([$user->id]);
+                $isMember = true;
+            }
+            if (!$isMember) abort(403);
         }
 
         $messages = Message::with('author')
@@ -48,10 +54,15 @@ class IntranetController extends Controller
     public function pollMessages($id)
     {
         $user = auth()->user();
-        $conversation = Conversation::findOrFail($id);
+        $conversation = Conversation::with('participants')->findOrFail($id);
 
-        if (!$conversation->participants->contains('id', $user->id) && !$user->is_admin) {
-            abort(403);
+        $isMember = $conversation->participants->contains('id', $user->id);
+        if (!$isMember && !$user->is_admin) {
+            if ($conversation->department_id && $user->departments()->where('departments.id', $conversation->department_id)->exists()) {
+                $conversation->participants()->syncWithoutDetaching([$user->id]);
+                $isMember = true;
+            }
+            if (!$isMember) abort(403);
         }
 
         $after = request('after');
@@ -107,8 +118,13 @@ class IntranetController extends Controller
         $user = auth()->user();
 
         $conversation = Conversation::with('participants')->findOrFail($id);
-        if (!$conversation->participants->contains('id', $user->id)) {
-            abort(403);
+        $isMember = $conversation->participants->contains('id', $user->id);
+        if (!$isMember) {
+            if ($conversation->department_id && $user->departments()->where('departments.id', $conversation->department_id)->exists()) {
+                $conversation->participants()->syncWithoutDetaching([$user->id]);
+            } else {
+                abort(403);
+            }
         }
 
         $message = Message::create([

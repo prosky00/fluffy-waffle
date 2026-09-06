@@ -379,7 +379,7 @@
                 <option value="@everyone">@everyone</option>
                 @foreach($discordRoles as $role)
                     @if($role['name'] !== '@everyone')
-                    <option value="{{ $role['id'] }}">@{{ $role['name'] }}</option>
+                    <option value="{{ $role['id'] }}">{{ $role['name'] }}</option>
                     @endif
                 @endforeach
             </select>
