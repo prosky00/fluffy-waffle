@@ -1,0 +1,68 @@
+services:
+
+  # ── PHP application ──────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # SQLite database persists between container restarts
+      - db_data:/var/www/html/database
+      # Uploaded files, logs, compiled views
+      - storage_data:/var/www/html/storage
+    networks:
+      - faction
+    depends_on:
+      mysql:
+        condition: service_healthy
+        required: false   # only blocks if mysql service is actually enabled below
+
+  # ── Nginx web server ─────────────────────────────────────────────────────────
+  web:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./public:/var/www/html/public:ro
+      - storage_data:/var/www/html/storage:ro
+    networks:
+      - faction
+    depends_on:
+      - app
+
+  # ── MySQL (optional — comment out if you prefer SQLite) ──────────────────────
+  # To enable:
+  #   1. Uncomment the mysql block below
+  #   2. In .env set DB_CONNECTION=mysql and fill in DB_HOST=mysql, DB_PORT=3306, etc.
+  #   3. Run: docker compose up -d
+  #
+  # mysql:
+  #   image: mysql:8.0
+  #   restart: unless-stopped
+  #   environment:
+  #     MYSQL_DATABASE: ${DB_DATABASE:-faction}
+  #     MYSQL_USER: ${DB_USERNAME:-faction}
+  #     MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+  #     MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   networks:
+  #     - faction
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+volumes:
+  db_data:
+  storage_data:
+  # mysql_data:   # uncomment with MySQL block above
+
+networks:
+  faction:
+    driver: bridge

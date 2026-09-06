@@ -1,0 +1,52 @@
+#!/bin/bash
+set -e
+
+echo "==> Starting Faction Dashboard..."
+
+INSTALLED_LOCK="storage/installed.lock"
+
+# ── Make .env writable so the install wizard can write to it ─────────────────
+touch .env 2>/dev/null || true
+chmod 664 .env 2>/dev/null || true
+
+# ── SQLite: ensure database directory and file exist ─────────────────────────
+if grep -q "DB_CONNECTION=sqlite" .env 2>/dev/null; then
+    DB_FILE="${DB_DATABASE:-/var/www/html/database/database.sqlite}"
+    mkdir -p "$(dirname "$DB_FILE")"
+    touch "$DB_FILE"
+    chown www-data:www-data "$DB_FILE" 2>/dev/null || true
+fi
+
+if [ -f "$INSTALLED_LOCK" ]; then
+    # ── Already installed: run any pending migrations and warm caches ──────────
+    echo "==> Already installed. Running pending migrations..."
+    php artisan migrate --force
+
+    if [ ! -L "public/storage" ]; then
+        php artisan storage:link
+    fi
+
+    if [ "$APP_ENV" = "production" ]; then
+        echo "==> Caching config, routes, and views..."
+        php artisan config:cache
+        php artisan route:cache
+        php artisan view:cache
+    fi
+else
+    # ── First boot: prepare for install wizard ────────────────────────────────
+    echo "==> Not installed yet — waiting for install wizard at http://<host>/install"
+
+    # Generate a throw-away key so Laravel can boot enough to serve the wizard
+    if grep -q "PLACEHOLDER\|CHANGE_ME" .env 2>/dev/null; then
+        php artisan key:generate --force 2>/dev/null || true
+    fi
+
+    # Run only the bare minimum to let sessions work for the CSRF token
+    # (file session driver is used during install, so no DB needed yet)
+fi
+
+# ── Fix permissions one final time (volumes may reset ownership) ──────────────
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+
+echo "==> Ready. Starting PHP-FPM..."
+exec "$@"
