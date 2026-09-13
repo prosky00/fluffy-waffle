@@ -318,7 +318,19 @@ class AdminController extends Controller
             'is_admin'        => 'nullable|boolean',
             'discord_role_id' => 'nullable|string',
         ]);
+
+        $roleChanged = $data['discord_role_id'] !== $rank->discord_role_id;
+
         $rank->update($data);
+
+        if ($roleChanged) {
+            $this->logAudit('⚙️ Rang Discord-beállítás módosítva', [
+                'Végrehajtotta' => auth()->user()->in_game_name ?? auth()->user()->name,
+                'Rang'          => $rank->name,
+                'Role ID'       => $data['discord_role_id'],
+            ]);
+        }
+
         return $this->adminTab('ranks', 'Rang frissítve.');
     }
 
@@ -444,15 +456,36 @@ class AdminController extends Controller
 
     public function updateDiscordSettings(Request $request)
     {
-        $data = $request->validate([
+        $data     = $request->validate([
             'discord_announcement_channel_id' => 'nullable|string|max:50',
             'discord_reports_channel_id'      => 'nullable|string|max:50',
             'discord_applications_channel_id' => 'nullable|string|max:50',
             'discord_audit_channel_id'        => 'nullable|string|max:50',
             'discord_member_role_id'          => 'nullable|string|max:50',
         ]);
+        $settings = FactionSetting::singleton();
+        $labels   = [
+            'discord_announcement_channel_id' => 'Felhívások csatorna',
+            'discord_reports_channel_id'      => 'Jelentések csatorna',
+            'discord_applications_channel_id' => 'Jelentkezések csatorna',
+            'discord_audit_channel_id'        => 'Audit csatorna',
+            'discord_member_role_id'          => 'Tag szerepkör',
+        ];
+        $changes = [];
+        foreach ($labels as $field => $label) {
+            if ($data[$field] !== $settings->$field) {
+                $changes[$label] = $data[$field];
+            }
+        }
 
-        FactionSetting::singleton()->update($data);
+        $settings->update($data);
+
+        if (!empty($changes)) {
+            $this->logAudit('⚙️ Discord csatorna-beállítások módosítva', array_merge([
+                'Végrehajtotta' => auth()->user()->in_game_name ?? auth()->user()->name,
+            ], $changes));
+        }
+
         return $this->adminTab('discord', 'Discord csatorna beállítások mentve.');
     }
 
