@@ -8,9 +8,12 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      # SQLite database persists between container restarts
-      - db_data:/var/www/html/database
-      # Uploaded files, logs, compiled views
+      # Uploaded files, logs, compiled views, and (per DB_DATABASE in .env) the
+      # SQLite file itself. Deliberately NOT volume-mounting database/ as a whole —
+      # that directory also holds migrations/, which must always come fresh from
+      # the image. A volume there would freeze migrations/ to whatever existed
+      # when the volume was first created, silently hiding every migration added
+      # after that on every future deploy.
       - storage_data:/var/www/html/storage
       # Shared with nginx below — must be the app image's own public/ (built
       # assets + the storage symlink baked in at build time), not a host bind,
@@ -63,7 +66,6 @@ services:
   #     retries: 5
 
 volumes:
-  db_data:
   storage_data:
   public_data:
   # mysql_data:   # uncomment with MySQL block above

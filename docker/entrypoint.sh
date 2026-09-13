@@ -25,7 +25,7 @@ fi
 # Checked against the real process environment (not the .env file) so this also
 # works on hosts that inject env vars directly instead of writing a .env file.
 if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
-    DB_FILE="${DB_DATABASE:-/var/www/html/database/database.sqlite}"
+    DB_FILE="${DB_DATABASE:-/var/www/html/storage/app/database.sqlite}"
     mkdir -p "$(dirname "$DB_FILE")"
     touch "$DB_FILE"
     chown www-data:www-data "$DB_FILE" 2>/dev/null || true

@@ -107,7 +107,7 @@ LOG_DEPRECATIONS_CHANNEL=null
 LOG_LEVEL=error
 
 DB_CONNECTION=sqlite
-DB_DATABASE=/var/www/html/database/database.sqlite
+DB_DATABASE=/var/www/html/storage/app/database.sqlite
 
 SESSION_DRIVER=file
 SESSION_LIFETIME=120
