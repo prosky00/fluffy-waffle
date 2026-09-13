@@ -18,7 +18,11 @@ class IntranetController extends Controller
         $user = auth()->user();
 
         if ($request->query('dept')) {
-            $conversation = Department::findOrFail($request->query('dept'))->syncConversation();
+            $dept = Department::findOrFail($request->query('dept'));
+            if (!$user->is_admin && !$user->departments()->where('departments.id', $dept->id)->exists()) {
+                abort(403);
+            }
+            $conversation = $dept->syncConversation();
             return redirect("/intranet/{$conversation->id}");
         }
 
@@ -28,7 +32,7 @@ class IntranetController extends Controller
         $folderCounts = $this->folderCounts($all, $user);
         $users = User::orderBy('name')->get(['id', 'name', 'in_game_name']);
         $ranks = Rank::orderBy('level', 'desc')->get();
-        $departments = Department::orderBy('name')->get(['id', 'name', 'discord_role_id', 'discord_channel_id']);
+        $departments = $this->visibleDepartments($user);
         return $this->view('intranet', compact('conversations', 'users', 'ranks', 'departments', 'folder', 'folderCounts'));
     }
 
@@ -54,7 +58,7 @@ class IntranetController extends Controller
         $folderCounts = $this->folderCounts($all, $user);
         $users = User::orderBy('name')->get(['id', 'name', 'in_game_name']);
         $ranks = Rank::orderBy('level', 'desc')->get();
-        $departments = Department::orderBy('name')->get(['id', 'name', 'discord_role_id', 'discord_channel_id']);
+        $departments = $this->visibleDepartments($user);
 
         return $this->view('intranet', compact('conversations', 'conversation', 'messages', 'users', 'ranks', 'departments', 'folder', 'folderCounts'));
     }
@@ -221,6 +225,17 @@ class IntranetController extends Controller
 
         $message->delete();
         return response()->json(['ok' => true]);
+    }
+
+    /** Org folders: admins can browse/message every department; everyone else only
+     *  sees the department(s) they actually belong to. */
+    private function visibleDepartments(User $user)
+    {
+        $query = Department::orderBy('name');
+        if (!$user->is_admin) {
+            $query->whereHas('members', fn($q) => $q->where('users.id', $user->id));
+        }
+        return $query->get(['id', 'name', 'discord_role_id', 'discord_channel_id']);
     }
 
     private function userConversations(User $user)
