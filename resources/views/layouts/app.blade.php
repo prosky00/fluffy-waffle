@@ -203,6 +203,30 @@
         .form-select option { background: var(--surface); }
         .form-label { color: var(--fg-muted); font-size: 13px; margin-bottom: 6px; display: block; }
 
+        /* EasyMDE dark-theme override — the library ships a light theme by default */
+        .EasyMDEContainer .CodeMirror {
+            background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+            border-top: none; border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .EasyMDEContainer .CodeMirror-cursor { border-left-color: var(--fg); }
+        .EasyMDEContainer .CodeMirror-selected { background: var(--surface-3); }
+        .EasyMDEContainer .editor-toolbar {
+            background: var(--surface); border: 1px solid var(--border); border-bottom: none;
+            border-radius: var(--radius) var(--radius) 0 0; opacity: 1;
+        }
+        .EasyMDEContainer .editor-toolbar a { color: var(--fg-muted) !important; }
+        .EasyMDEContainer .editor-toolbar a:hover,
+        .EasyMDEContainer .editor-toolbar a.active {
+            background: var(--surface-3); border-color: var(--border);
+        }
+        .EasyMDEContainer .editor-toolbar i.separator { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+        .EasyMDEContainer .editor-toolbar button:disabled { opacity: .4; }
+        .EasyMDEContainer .editor-statusbar { color: var(--fg-subtle); }
+        .EasyMDEContainer .CodeMirror-placeholder { color: var(--fg-subtle) !important; }
+        .editor-preview, .editor-preview-side {
+            background: var(--bg); color: var(--fg);
+        }
+
         /* Badges */
         .badge {
             display: inline-flex; align-items: center; padding: 2px 8px;

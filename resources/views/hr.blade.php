@@ -102,16 +102,17 @@
             $a = $jr->answers[$f->id] ?? null;
             return ['label' => $f->label, 'value' => is_bool($a) ? ($a ? 'Igen' : 'Nem') : ($a ?: '—')];
         })->values();
+        $reviewedAppData = [
+            'name'        => $jr->user->in_game_name ?? $jr->user->name,
+            'username'    => $jr->user->username,
+            'statusLabel' => $statusLabel,
+            'reviewer'    => $jr->reviewer ? ($jr->reviewer->in_game_name ?? $jr->reviewer->name) : null,
+            'reviewedAt'  => ($jr->reviewed_at ?? $jr->created_at)->format('Y. m. d. H:i'),
+            'reviewNote'  => $jr->review_note,
+            'answers'     => $answerPairs,
+        ];
     @endphp
-    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer" onclick='openReviewedApp(@json([
-        "name"       => $jr->user->in_game_name ?? $jr->user->name,
-        "username"   => $jr->user->username,
-        "statusLabel"=> $statusLabel,
-        "reviewer"   => $jr->reviewer ? ($jr->reviewer->in_game_name ?? $jr->reviewer->name) : null,
-        "reviewedAt" => ($jr->reviewed_at ?? $jr->created_at)->format("Y. m. d. H:i"),
-        "reviewNote" => $jr->review_note,
-        "answers"    => $answerPairs,
-    ]))'>
+    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer" onclick='openReviewedApp(@json($reviewedAppData))'>
         <div style="flex:1;min-width:0">
             <span style="color:var(--fg);font-weight:600;font-size:13px">{{ $jr->user->in_game_name ?? $jr->user->name }}</span>
             <span style="color:var(--fg-subtle);font-size:12px;margin-left:6px">{{ '@'.$jr->user->username }}</span>
