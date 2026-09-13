@@ -126,8 +126,13 @@ class DiscordSyncController extends Controller
         // member (e.g. roles from other bots) is left untouched.
         $rankRoleIds = Rank::whereNotNull('discord_role_id')->pluck('discord_role_id')->all();
         $deptRoleIds = Department::whereNotNull('discord_role_id')->pluck('discord_role_id')->all();
-        $adminRoleId = FactionSetting::singleton()->discord_admin_role_id;
-        $managedRoleIds = array_unique(array_filter(array_merge($rankRoleIds, $deptRoleIds, [$adminRoleId])));
+        $settings    = FactionSetting::singleton();
+        $adminRoleId = $settings->discord_admin_role_id;
+        $memberRoleId = $settings->discord_member_role_id;
+        $guestRoleId  = $settings->discord_guest_role_id;
+        $managedRoleIds = array_unique(array_filter(array_merge(
+            $rankRoleIds, $deptRoleIds, [$adminRoleId, $memberRoleId, $guestRoleId]
+        )));
 
         $users = User::whereNotNull('discord_id')->with(['rank', 'departments'])->get();
         $updated = 0;
@@ -136,6 +141,8 @@ class DiscordSyncController extends Controller
             $desiredRoleIds = [];
             if ($roleId = $user->rank?->discord_role_id) $desiredRoleIds[] = $roleId;
             if ($user->is_admin && $adminRoleId) $desiredRoleIds[] = $adminRoleId;
+            if ($user->is_member && $memberRoleId) $desiredRoleIds[] = $memberRoleId;
+            if (!$user->is_member && $guestRoleId) $desiredRoleIds[] = $guestRoleId;
 
             $deptIds = $user->departments->pluck('id')->toArray();
             if ($user->department_id) $deptIds[] = $user->department_id;

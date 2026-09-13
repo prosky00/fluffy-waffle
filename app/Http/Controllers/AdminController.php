@@ -231,7 +231,7 @@ class AdminController extends Controller
             }
         }
 
-        $this->syncDiscordRoles($user, $oldRankId, $oldDeptId, $oldDeptPivotIds, (bool)$oldIsAdmin, $oldInGameName);
+        $this->syncDiscordRoles($user, $oldRankId, $oldDeptId, $oldDeptPivotIds, (bool)$oldIsAdmin, $oldInGameName, (bool)$oldIsMember);
 
         if (!empty($changes)) {
             $msg = implode("\n", array_map(fn($c) => "• {$c}", $changes));
@@ -509,7 +509,7 @@ class AdminController extends Controller
      *  isn't configured. Note: this only reacts to a user's own rank/department/
      *  admin changing — it does not retroactively re-sync everyone if a rank's or
      *  department's discord_role_id mapping itself is edited later. */
-    private function syncDiscordRoles(User $user, ?int $oldRankId, ?int $oldDeptId, array $oldDeptPivotIds, bool $oldIsAdmin, ?string $oldInGameName = null): void
+    private function syncDiscordRoles(User $user, ?int $oldRankId, ?int $oldDeptId, array $oldDeptPivotIds, bool $oldIsAdmin, ?string $oldInGameName = null, bool $oldIsMember = false): void
     {
         if (!$user->discord_id) return;
         $discord = app(DiscordService::class);
@@ -517,6 +517,8 @@ class AdminController extends Controller
         if ($user->in_game_name && $user->in_game_name !== $oldInGameName) {
             $discord->setNickname($user->discord_id, $user->in_game_name);
         }
+
+        $discord->syncMembershipRole($user, $oldIsMember);
 
         if ((int)$user->rank_id !== (int)$oldRankId) {
             if ($oldRankId && $roleId = Rank::find($oldRankId)?->discord_role_id) {
@@ -602,6 +604,7 @@ class AdminController extends Controller
             'discord_audit_channel_id'        => 'nullable|string|max:50',
             'discord_member_role_id'          => 'nullable|string|max:50',
             'discord_admin_role_id'           => 'nullable|string|max:50',
+            'discord_guest_role_id'           => 'nullable|string|max:50',
         ]);
         $settings = FactionSetting::singleton();
         $labels   = [
@@ -611,6 +614,7 @@ class AdminController extends Controller
             'discord_audit_channel_id'        => 'Audit csatorna',
             'discord_member_role_id'          => 'Tag szerepkör',
             'discord_admin_role_id'           => 'Admin szerepkör',
+            'discord_guest_role_id'           => 'Vendég szerepkör',
         ];
         $changes = [];
         foreach ($labels as $field => $label) {

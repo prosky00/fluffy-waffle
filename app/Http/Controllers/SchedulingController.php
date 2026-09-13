@@ -38,9 +38,11 @@ class SchedulingController extends Controller
     public function grantAccess($id)
     {
         $application = FactionApplication::where('status', 'SCHEDULED')->findOrFail($id);
+        $wasMember = $application->user->is_member;
         $application->user->update(['is_member' => true]);
         $application->update(['status' => 'MEMBER']);
 
+        app(DiscordService::class)->syncMembershipRole($application->user, $wasMember);
         $this->notify($application, 'Gratulálunk! Az interjú után a jelentkezésed elfogadva, mostantól elérheted a belső felületet.');
         $this->logAudit('✅ Hozzáférés megadva (interjú után)', [
             'Végrehajtotta' => $this->actorName(),

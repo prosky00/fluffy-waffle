@@ -183,9 +183,9 @@ class DiscordService
     }
 
     /** Grants a freshly-linked user everything their current site profile
-     *  implies — nickname, rank role, department role(s), admin role — since
-     *  they had no Discord roles to react to before now. Only adds; there's
-     *  nothing to remove on a first link. */
+     *  implies — nickname, guest/member role, rank role, department role(s),
+     *  admin role — since they had no Discord roles to react to before now.
+     *  Only adds; there's nothing to remove on a first link. */
     public function pushUserState(User $user): void
     {
         if (!$user->discord_id) return;
@@ -193,6 +193,9 @@ class DiscordService
         if ($user->in_game_name) {
             $this->setNickname($user->discord_id, $user->in_game_name);
         }
+
+        $settings = FactionSetting::singleton();
+        $this->addMemberRole($user->discord_id, $user->is_member ? $settings->discord_member_role_id : $settings->discord_guest_role_id);
 
         if ($user->rank_id && $roleId = $user->rank?->discord_role_id) {
             $this->addMemberRole($user->discord_id, $roleId);
@@ -204,8 +207,25 @@ class DiscordService
             $this->addMemberRole($user->discord_id, $dept->discord_role_id);
         }
 
-        if ($user->is_admin && $adminRoleId = FactionSetting::singleton()->discord_admin_role_id) {
-            $this->addMemberRole($user->discord_id, $adminRoleId);
+        if ($user->is_admin && $settings->discord_admin_role_id) {
+            $this->addMemberRole($user->discord_id, $settings->discord_admin_role_id);
+        }
+    }
+
+    /** Flips a user between the Guest and Member Discord roles when is_member
+     *  changes — granting one and revoking the other. No-op if neither role
+     *  is configured, or if the user hasn't linked Discord. */
+    public function syncMembershipRole(User $user, bool $oldIsMember): void
+    {
+        if (!$user->discord_id || $user->is_member === $oldIsMember) return;
+
+        $settings = FactionSetting::singleton();
+        if ($user->is_member) {
+            $this->addMemberRole($user->discord_id, $settings->discord_member_role_id);
+            $this->removeMemberRole($user->discord_id, $settings->discord_guest_role_id);
+        } else {
+            $this->addMemberRole($user->discord_id, $settings->discord_guest_role_id);
+            $this->removeMemberRole($user->discord_id, $settings->discord_member_role_id);
         }
     }
 
