@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\DiscordService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -15,7 +16,13 @@ class SettingsController extends Controller
     public function update(Request $request)
     {
         $request->validate(['in_game_name' => 'nullable|string|max:100']);
-        auth()->user()->update(['in_game_name' => $request->in_game_name]);
+        $user = auth()->user();
+        $user->update(['in_game_name' => $request->in_game_name]);
+
+        if ($user->discord_id && $request->in_game_name) {
+            app(DiscordService::class)->setNickname($user->discord_id, $request->in_game_name);
+        }
+
         return back()->with('success', 'Beállítások mentve.');
     }
 

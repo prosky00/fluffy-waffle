@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Department;
+use App\Models\FactionSetting;
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 
 class DiscordService
@@ -159,6 +162,50 @@ class DiscordService
             return $r->successful();
         } catch (\Exception) {
             return false;
+        }
+    }
+
+    /** Sets a member's server nickname. Requires the bot to have Manage Nicknames
+     *  and — like role changes — to sit above the target in the role hierarchy;
+     *  Discord also refuses to nickname the guild owner regardless of permissions. */
+    public function setNickname(string $discordId, string $nickname): bool
+    {
+        if (!$this->token || !$this->guildId || !$discordId) return false;
+        try {
+            $r = Http::withHeaders(['Authorization' => "Bot {$this->token}"])
+                ->patch("https://discord.com/api/v10/guilds/{$this->guildId}/members/{$discordId}", [
+                    'nick' => mb_substr($nickname, 0, 32),
+                ]);
+            return $r->successful();
+        } catch (\Exception) {
+            return false;
+        }
+    }
+
+    /** Grants a freshly-linked user everything their current site profile
+     *  implies — nickname, rank role, department role(s), admin role — since
+     *  they had no Discord roles to react to before now. Only adds; there's
+     *  nothing to remove on a first link. */
+    public function pushUserState(User $user): void
+    {
+        if (!$user->discord_id) return;
+
+        if ($user->in_game_name) {
+            $this->setNickname($user->discord_id, $user->in_game_name);
+        }
+
+        if ($user->rank_id && $roleId = $user->rank?->discord_role_id) {
+            $this->addMemberRole($user->discord_id, $roleId);
+        }
+
+        $deptIds = $user->departments()->pluck('departments.id')->toArray();
+        if ($user->department_id) $deptIds[] = $user->department_id;
+        foreach (Department::whereIn('id', array_unique($deptIds))->get() as $dept) {
+            $this->addMemberRole($user->discord_id, $dept->discord_role_id);
+        }
+
+        if ($user->is_admin && $adminRoleId = FactionSetting::singleton()->discord_admin_role_id) {
+            $this->addMemberRole($user->discord_id, $adminRoleId);
         }
     }
 

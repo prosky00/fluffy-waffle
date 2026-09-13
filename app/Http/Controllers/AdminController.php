@@ -142,6 +142,7 @@ class AdminController extends Controller
         $oldDeptId       = $user->department_id;
         $oldDeptPivotIds = $user->departments()->pluck('departments.id')->toArray();
         $oldDeptRankId   = $user->department_rank_id;
+        $oldInGameName   = $user->in_game_name;
         $oldIsLeader     = $user->is_department_leader;
         $oldIsDeputy     = $user->is_department_deputy;
         $oldIsAdmin      = $user->is_admin;
@@ -230,7 +231,7 @@ class AdminController extends Controller
             }
         }
 
-        $this->syncDiscordRoles($user, $oldRankId, $oldDeptId, $oldDeptPivotIds, (bool)$oldIsAdmin);
+        $this->syncDiscordRoles($user, $oldRankId, $oldDeptId, $oldDeptPivotIds, (bool)$oldIsAdmin, $oldInGameName);
 
         if (!empty($changes)) {
             $msg = implode("\n", array_map(fn($c) => "• {$c}", $changes));
@@ -502,16 +503,20 @@ class AdminController extends Controller
         return redirect()->route('hr.index', ['tab' => 'applications'])->with('success', 'Módosítás kérve a jelentkezőtől.');
     }
 
-    /** Pushes rank/department/admin changes made on the site out to the user's real
-     *  Discord roles. No-ops silently if they haven't linked a Discord account, if
-     *  nothing relevant changed, or if the corresponding role isn't configured. Note:
-     *  this only reacts to a user's own rank/department/admin changing — it does not
-     *  retroactively re-sync everyone if a rank's or department's discord_role_id
-     *  mapping itself is edited later. */
-    private function syncDiscordRoles(User $user, ?int $oldRankId, ?int $oldDeptId, array $oldDeptPivotIds, bool $oldIsAdmin): void
+    /** Pushes rank/department/admin/name changes made on the site out to the user's
+     *  real Discord roles and nickname. No-ops silently if they haven't linked a
+     *  Discord account, if nothing relevant changed, or if the corresponding role
+     *  isn't configured. Note: this only reacts to a user's own rank/department/
+     *  admin changing — it does not retroactively re-sync everyone if a rank's or
+     *  department's discord_role_id mapping itself is edited later. */
+    private function syncDiscordRoles(User $user, ?int $oldRankId, ?int $oldDeptId, array $oldDeptPivotIds, bool $oldIsAdmin, ?string $oldInGameName = null): void
     {
         if (!$user->discord_id) return;
         $discord = app(DiscordService::class);
+
+        if ($user->in_game_name && $user->in_game_name !== $oldInGameName) {
+            $discord->setNickname($user->discord_id, $user->in_game_name);
+        }
 
         if ((int)$user->rank_id !== (int)$oldRankId) {
             if ($oldRankId && $roleId = Rank::find($oldRankId)?->discord_role_id) {

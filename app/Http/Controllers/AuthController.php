@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\DiscordService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
@@ -78,6 +79,8 @@ class AuthController extends Controller
                 'discord_id' => $discordUser->getId(),
                 'avatar'     => $discordUser->getAvatar() ?? auth()->user()->avatar,
             ]);
+
+            app(DiscordService::class)->pushUserState(auth()->user());
 
             return redirect('/profile')->with('success', 'Discord fiók sikeresen csatolva. Mostantól értesítéseket kapsz Discordon is.');
         }
