@@ -19,6 +19,10 @@
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     Alosztályok
 </button>
+<button class="subnav-link {{ $curTab==='sync' ? 'active' : '' }}" onclick="showPanel('sync')">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    Szinkron
+</button>
 @endif
 
 <span class="subnav-category">Tartalom</span>
@@ -27,9 +31,9 @@
     Felhívások
 </button>
 @if(auth()->user()->is_admin)
-<button class="subnav-link {{ $curTab==='categories' ? 'active' : '' }}" onclick="showPanel('categories')">
-    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-    Kat. (Jelentések)
+<button class="subnav-link {{ $curTab==='messages' ? 'active' : '' }}" onclick="showPanel('messages')">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    Üzenetek
 </button>
 @endif
 
@@ -38,6 +42,12 @@
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     Összes jelentés
 </button>
+@if(auth()->user()->is_admin)
+<button class="subnav-link {{ $curTab==='categories' ? 'active' : '' }}" onclick="showPanel('categories')">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+    Kat. (Jelentések)
+</button>
+@endif
 
 @if(auth()->user()->is_admin)
 <span class="subnav-category">Rendszer</span>
@@ -49,14 +59,6 @@
     <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.001.022.015.04.032.05a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
     Discord
 </button>
-<button class="subnav-link {{ $curTab==='sync' ? 'active' : '' }}" onclick="showPanel('sync')">
-    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-    Szinkron
-</button>
-<button class="subnav-link {{ $curTab==='messages' ? 'active' : '' }}" onclick="showPanel('messages')">
-    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-    Üzenetek
-</button>
 @endif
 @endpush
 
@@ -65,22 +67,16 @@
 <style>
 .admin-panel { display:none; }
 .admin-panel.active { display:block; }
-.status-badge { padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:600; }
-.badge-yellow { background:rgba(245,158,11,.15); color:#f59e0b; }
-.badge-green  { background:rgba(52,211,153,.15);  color:#34d399; }
-.badge-red    { background:rgba(248,113,113,.15);  color:#f87171; }
-.badge-gray   { background:rgba(139,148,158,.15);  color:#8b949e; }
-.badge-purple { background:rgba(168,85,247,.15);   color:#a855f7; }
-.CodeMirror { background:oklch(0.145 0 0) !important; color:oklch(0.985 0 0) !important; border-color:oklch(1 0 0 / 10%) !important; }
-.editor-toolbar { background:oklch(0.205 0 0) !important; border-color:oklch(1 0 0 / 10%) !important; }
-.editor-toolbar button { color:oklch(0.708 0 0) !important; }
-.editor-toolbar button:hover, .editor-toolbar button.active { background:oklch(1 0 0 / 10%) !important; color:oklch(0.985 0 0) !important; }
-.editor-preview { background:oklch(0.145 0 0) !important; color:oklch(0.985 0 0) !important; }
+.CodeMirror { background:var(--bg) !important; color:var(--fg) !important; border-color:var(--border) !important; }
+.editor-toolbar { background:var(--surface) !important; border-color:var(--border) !important; }
+.editor-toolbar button { color:var(--fg-muted) !important; }
+.editor-toolbar button:hover, .editor-toolbar button.active { background:var(--border) !important; color:var(--fg) !important; }
+.editor-preview { background:var(--bg) !important; color:var(--fg) !important; }
 </style>
 @endpush
 
 @section('content')
-<h1 style="color:#fff;font-size:22px;font-weight:700;margin-bottom:20px">{{ auth()->user()->is_admin ? 'Admin felület' : 'Kezelőpanel' }}</h1>
+<h1 style="color:var(--fg);font-size:22px;font-weight:700;margin-bottom:20px">{{ auth()->user()->is_admin ? 'Admin felület' : 'Kezelőpanel' }}</h1>
 
 @if(session('success'))
 <div class="alert alert-green">{{ session('success') }}</div>
@@ -92,12 +88,12 @@
 {{-- ════ USERS ════ --}}
 @if(auth()->user()->is_admin)
 <div id="panel-users" class="admin-panel">
-<div class="card" style="margin-bottom:16px;border-color:#34d39944">
+<div class="card" style="margin-bottom:16px;border-color:rgba(52,211,153,.3)">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleNewUser()">
         <div style="color:#34d399;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">+ Új fiók létrehozása</div>
         <svg id="newUserChevron" width="16" height="16" fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24" style="transition:transform .2s;flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
-    <div id="newUserForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #1e2d3d">
+    <div id="newUserForm" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
         <form method="POST" action="{{ route('admin.users.store') }}">
             @csrf
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">
@@ -113,8 +109,8 @@
                     </select>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end;padding-bottom:4px">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#8b949e"><input type="checkbox" name="is_supervisor" value="1"> Szupervisor</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#8b949e"><input type="checkbox" name="is_admin" value="1"> Admin</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_supervisor" value="1"> Szupervisor</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_admin" value="1"> Admin</label>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary" style="font-size:12px;padding:6px 14px">Fiók létrehozása</button>
@@ -128,50 +124,48 @@
 
 <div class="card" style="padding:0;overflow:hidden">
 <div style="overflow-x:auto">
-<table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead><tr style="border-bottom:1px solid #1e2d3d">
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Tag</th>
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Felhasználónév</th>
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Rendfokozat</th>
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Discord</th>
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Szerepkör</th>
-        <th style="padding:10px 16px;text-align:right;color:#4a5568;font-weight:500">Műveletek</th>
+<table class="table">
+    <thead><tr>
+        <th>Tag</th>
+        <th>Felhasználónév</th>
+        <th>Rendfokozat</th>
+        <th>Discord</th>
+        <th>Szerepkör</th>
+        <th style="text-align:right">Műveletek</th>
     </tr></thead>
     <tbody>
     @foreach($users as $u)
-    <tr class="user-row" data-search="{{ strtolower(($u->in_game_name ?? $u->name) . ' ' . $u->username) }}"
-        style="border-bottom:1px solid #111c2a;transition:background .12s"
-        onmouseover="this.style.background='#0d1826'" onmouseout="this.style.background=''">
-        <td style="padding:10px 16px">
+    <tr class="user-row" data-search="{{ strtolower(($u->in_game_name ?? $u->name) . ' ' . $u->username) }}">
+        <td>
             <div style="display:flex;align-items:center;gap:10px">
                 @if($u->avatar)
                     <img src="{{ $u->avatar }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">
                 @else
-                    <div style="width:32px;height:32px;border-radius:50%;background:#1a2332;display:flex;align-items:center;justify-content:center;color:#34d399;font-weight:700;font-size:13px;flex-shrink:0">{{ strtoupper(substr($u->name,0,1)) }}</div>
+                    <div style="width:32px;height:32px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:#34d399;font-weight:700;font-size:13px;flex-shrink:0">{{ strtoupper(substr($u->name,0,1)) }}</div>
                 @endif
-                <span style="color:#fff;font-weight:500">{{ $u->in_game_name ?? $u->name }}</span>
-                @if($u->is_suspended)<span style="color:#f87171;font-size:11px;margin-left:4px">(felfüggesztve)</span>@endif
+                <span style="color:var(--fg);font-weight:500">{{ $u->in_game_name ?? $u->name }}</span>
+                @if($u->is_suspended)<span style="color:var(--destructive);font-size:11px;margin-left:4px">(felfüggesztve)</span>@endif
             </div>
         </td>
-        <td style="padding:10px 16px;color:#8b949e">{{ $u->username ? '@'.$u->username : '—' }}</td>
-        <td style="padding:10px 16px">
+        <td>{{ $u->username ? '@'.$u->username : '—' }}</td>
+        <td>
             @if($u->rank)<span class="badge" style="background:{{ $u->rank->color }}22;color:{{ $u->rank->color }}">{{ $u->rank->name }}</span>
-            @else<span style="color:#4a5568">—</span>@endif
+            @else<span style="color:var(--fg-subtle)">—</span>@endif
         </td>
-        <td style="padding:10px 16px">
-            @if($u->discord_id)<span style="color:#5865F2;font-size:12px">✓ Csatolva</span>
-            @else<span style="color:#4a5568;font-size:12px">—</span>@endif
+        <td>
+            @if($u->discord_id)<span class="badge badge-blue">✓ Csatolva</span>
+            @else<span style="color:var(--fg-subtle);font-size:12px">—</span>@endif
         </td>
-        <td style="padding:10px 16px">
+        <td>
             @if($u->is_admin)<span class="badge badge-red" style="font-size:10px;margin-right:3px">Admin</span>@endif
             @if($u->is_supervisor)<span class="badge badge-purple" style="font-size:10px">Szupervisor</span>@endif
         </td>
-        <td style="padding:10px 16px;text-align:right">
+        <td style="text-align:right">
             <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="toggleUserEdit({{ $u->id }})">Szerkesztés</button>
         </td>
     </tr>
     <tr id="edit_row_{{ $u->id }}" style="display:none">
-        <td colspan="6" style="padding:16px 20px;background:#0a111a;border-bottom:1px solid #1e2d3d">
+        <td colspan="6" style="padding:16px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
             <form method="POST" action="/admin/users/{{ $u->id }}">
                 @csrf
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
@@ -220,19 +214,19 @@
                     <label class="form-label">Alosztály tagságok</label>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;padding:10px 12px;background:var(--bg);border:1px solid var(--border)">
                         @foreach($departments as $d)
-                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:oklch(0.708 0 0);padding:3px 0;cursor:pointer">
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--fg-muted);padding:3px 0;cursor:pointer">
                             <input type="checkbox" name="department_ids[]" value="{{ $d->id }}" {{ $u->departments->contains('id',$d->id)?'checked':'' }}>
-                            {{ $d->name }}@if($d->short_name)<span style="color:oklch(0.556 0 0);font-size:11px;margin-left:4px">{{ $d->short_name }}</span>@endif
+                            {{ $d->name }}@if($d->short_name)<span style="color:var(--fg-subtle);font-size:11px;margin-left:4px">{{ $d->short_name }}</span>@endif
                         </label>
                         @endforeach
                     </div>
                 </div>
                 {{-- Role flags --}}
                 <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border)">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_department_leader" value="1" {{ $u->is_department_leader?'checked':'' }}> Alosztályvezető</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_department_deputy" value="1" {{ $u->is_department_deputy?'checked':'' }}> Helyettes</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_supervisor" value="1" {{ $u->is_supervisor?'checked':'' }}> Szupervisor</label>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:oklch(0.708 0 0)"><input type="checkbox" name="is_admin" value="1" {{ $u->is_admin?'checked':'' }}> Admin</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_department_leader" value="1" {{ $u->is_department_leader?'checked':'' }}> Alosztályvezető</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_department_deputy" value="1" {{ $u->is_department_deputy?'checked':'' }}> Helyettes</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_supervisor" value="1" {{ $u->is_supervisor?'checked':'' }}> Szupervisor</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_admin" value="1" {{ $u->is_admin?'checked':'' }}> Admin</label>
                 </div>
 
                 <div style="display:flex;gap:8px">
@@ -241,7 +235,7 @@
                 </div>
             </form>
             @if($u->id !== auth()->id())
-            <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #1e2d3d">
+            <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
                 <form method="POST" action="{{ route('admin.users.suspend', $u->id) }}">
                     @csrf
                     <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:4px 10px">{{ $u->is_suspended ? '✓ Aktiválás' : '⊘ Felfüggesztés' }}</button>
@@ -266,14 +260,14 @@
 @if(auth()->user()->is_admin)
 <div id="panel-ranks" class="admin-panel">
 <div class="card" style="margin-bottom:16px">
-    <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:16px">Új rang</div>
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:16px">Új rang</div>
     <form method="POST" action="/admin/ranks" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-items:flex-end">
         @csrf
         <div><label class="form-label">Név</label><input type="text" name="name" class="form-input" required></div>
         <div><label class="form-label">Szín</label><input type="color" name="color" class="form-input" value="#8b949e" style="height:38px;padding:4px"></div>
         <div><label class="form-label">Szint</label><input type="number" name="level" class="form-input" value="0"></div>
         <div><label class="form-label">Discord szerepkör ID</label><input type="text" name="discord_role_id" class="form-input" placeholder="Opcionális"></div>
-        <div style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="is_admin" value="1" id="newRankAdmin"><label for="newRankAdmin" style="color:#8b949e;font-size:13px">Admin rang</label></div>
+        <div style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="is_admin" value="1" id="newRankAdmin"><label for="newRankAdmin" style="color:var(--fg-subtle);font-size:13px">Admin rang</label></div>
         <button type="submit" class="btn btn-primary">Hozzáadás</button>
     </form>
 </div>
@@ -308,28 +302,34 @@
 
 {{-- ════ DEPARTMENTS ════ --}}
 <div id="panel-departments" class="admin-panel">
-<div class="card">
-    <div style="color:oklch(0.985 0 0);font-size:15px;font-weight:600;margin-bottom:6px">Alosztályok — Discord beállítások</div>
-    <p style="color:oklch(0.708 0 0);font-size:13px;margin-bottom:16px">
-        Minden alosztályhoz rendelj egy Discord szerepkört és csatornát. Ezek automatikusan öröklődnek az intranet csoport-üzenetváltásokra.
-    </p>
-    <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="border-bottom:1px solid oklch(1 0 0 / 10%)">
-            <th style="padding:8px 12px;text-align:left;color:oklch(0.556 0 0);font-weight:500">Alosztály</th>
-            <th style="padding:8px 12px;text-align:left;color:oklch(0.556 0 0);font-weight:500">Discord szerepkör</th>
-            <th style="padding:8px 12px;text-align:left;color:oklch(0.556 0 0);font-weight:500">Discord csatorna ID</th>
-            <th style="padding:8px 12px;text-align:right;color:oklch(0.556 0 0);font-weight:500"></th>
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="flex:1">
+        <div style="color:var(--fg);font-size:15px;font-weight:600">Alosztályok</div>
+        <p style="color:var(--fg-muted);font-size:13px;margin-top:2px">
+            Alosztályok létrehozása és szerkesztése, valamint Discord szerepkör/csatorna hozzárendelése. Ezek automatikusan öröklődnek az intranet csoport-üzenetváltásokra.
+        </p>
+    </div>
+    <button class="btn btn-primary" style="white-space:nowrap" onclick="openModal('newDeptModal')">+ Új alosztály</button>
+</div>
+<div class="card" style="padding:0;overflow:hidden">
+    <table class="table">
+        <thead><tr>
+            <th>Alosztály</th>
+            <th>Discord szerepkör</th>
+            <th>Discord csatorna ID</th>
+            <th style="text-align:right"></th>
+            <th style="text-align:right"></th>
         </tr></thead>
         <tbody>
-        @foreach($departments as $dept)
-        <tr style="border-bottom:1px solid oklch(1 0 0 / 6%)">
+        @forelse($departments as $dept)
+        <tr>
             <form method="POST" action="{{ route('admin.departments.discord', $dept->id) }}" style="display:contents">
                 @csrf @method('PUT')
-                <td style="padding:10px 12px">
-                    <div style="color:oklch(0.985 0 0);font-weight:500">{{ $dept->name }}</div>
-                    <div style="color:oklch(0.556 0 0);font-size:11px">{{ $dept->members_count }} tag</div>
+                <td>
+                    <div style="color:var(--fg);font-weight:500">{{ $dept->name }}</div>
+                    <div style="color:var(--fg-subtle);font-size:11px">{{ $dept->short_name }} · {{ $dept->members_count }}/{{ $dept->max_members ?: '∞' }} tag · {{ $dept->ranks->count() }} rang</div>
                 </td>
-                <td style="padding:10px 12px">
+                <td>
                     @if(count($discordRoles))
                     <select name="discord_role_id" class="form-select" style="font-size:12px;padding:4px 8px">
                         <option value="">— Nincs —</option>
@@ -343,24 +343,70 @@
                     <input type="text" name="discord_role_id" class="form-input" value="{{ $dept->discord_role_id }}" placeholder="Szerepkör ID" style="font-size:12px;padding:4px 8px">
                     @endif
                 </td>
-                <td style="padding:10px 12px">
+                <td>
                     <input type="text" name="discord_channel_id" class="form-input" value="{{ $dept->discord_channel_id }}" placeholder="Csatorna ID" style="font-size:12px;padding:4px 8px">
                 </td>
-                <td style="padding:10px 12px;text-align:right">
-                    <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:4px 10px">Mentés</button>
+                <td style="text-align:right;white-space:nowrap">
+                    <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:4px 8px">Mentés</button>
                 </td>
             </form>
+            <td style="text-align:right;white-space:nowrap">
+                <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="openEditDept({{ $dept->id }}, '{{ addslashes($dept->name) }}', '{{ addslashes($dept->short_name) }}', {{ $dept->max_members }})">Szerkesztés</button>
+                <form method="POST" action="/admin/departments/{{ $dept->id }}" style="display:inline-block" onsubmit="return confirm('Biztosan törlöd a(z) {{ addslashes($dept->name) }} alosztályt?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-danger" style="font-size:11px;padding:4px 8px">Törlés</button>
+                </form>
+            </td>
         </tr>
-        @endforeach
+        @empty
+        <tr><td colspan="5" style="padding:32px;text-align:center;color:var(--fg-subtle)">Még nincs alosztály.</td></tr>
+        @endforelse
         </tbody>
     </table>
 </div>
 </div>
 
+{{-- New department modal --}}
+<div class="modal-backdrop" id="newDeptModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('newDeptModal')">&times;</button>
+        <div class="modal-title">Új alosztály</div>
+        <form method="POST" action="/admin/departments">
+            @csrf
+            <div style="margin-bottom:12px"><label class="form-label">Név</label><input type="text" name="name" class="form-input" required></div>
+            <div style="margin-bottom:12px"><label class="form-label">Rövidítés</label><input type="text" name="short_name" class="form-input" required></div>
+            <div style="margin-bottom:16px"><label class="form-label">Max. létszám (0 = nincs limit)</label><input type="number" name="max_members" class="form-input" value="0" min="0"></div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn btn-primary">Létrehozás</button>
+                <button type="button" onclick="closeModal('newDeptModal')" class="btn btn-ghost">Mégse</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Edit department modal --}}
+<div class="modal-backdrop" id="editDeptModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('editDeptModal')">&times;</button>
+        <div class="modal-title">Alosztály szerkesztése</div>
+        <form method="POST" id="editDeptForm">
+            @csrf
+            @method('PUT')
+            <div style="margin-bottom:12px"><label class="form-label">Név</label><input type="text" name="name" id="editDeptName" class="form-input" required></div>
+            <div style="margin-bottom:12px"><label class="form-label">Rövidítés</label><input type="text" name="short_name" id="editDeptShort" class="form-input" required></div>
+            <div style="margin-bottom:16px"><label class="form-label">Max. létszám</label><input type="number" name="max_members" id="editDeptMax" class="form-input" min="0"></div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn btn-primary">Mentés</button>
+                <button type="button" onclick="closeModal('editDeptModal')" class="btn btn-ghost">Mégse</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {{-- ════ ANNOUNCEMENTS ════ --}}
 <div id="panel-announcements" class="admin-panel">
 <div class="card" style="margin-bottom:16px">
-    <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:16px">Új felhívás</div>
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:16px">Új felhívás</div>
     <form method="POST" action="{{ route('admin.announcements.store') }}" id="annForm">
         @csrf
         <div style="margin-bottom:12px"><label class="form-label">Cím</label><input type="text" name="title" class="form-input" required></div>
@@ -370,7 +416,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
             <input type="checkbox" name="post_to_discord" value="1" id="postDiscord" onchange="document.getElementById('discordMentionRow').style.display=this.checked?'flex':'none'">
-            <label for="postDiscord" style="color:#8b949e;font-size:13px">Küldés Discord-ra is</label>
+            <label for="postDiscord" style="color:var(--fg-subtle);font-size:13px">Küldés Discord-ra is</label>
         </div>
         <div id="discordMentionRow" style="display:none;align-items:center;gap:8px;margin-bottom:12px;padding-left:22px">
             <label class="form-label" style="margin:0;white-space:nowrap">Megemlítés:</label>
@@ -389,10 +435,10 @@
 </div>
 <div class="card">
     @foreach($announcements as $ann)
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1e2d3d">
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="flex:1">
-            <div style="color:#fff;font-size:14px;font-weight:500">{{ $ann->title }}</div>
-            <div style="color:#4a5568;font-size:12px">{{ $ann->author->name }} · {{ $ann->created_at->diffForHumans() }}</div>
+            <div style="color:var(--fg);font-size:14px;font-weight:500">{{ $ann->title }}</div>
+            <div style="color:var(--fg-subtle);font-size:12px">{{ $ann->author->name }} · {{ $ann->created_at->diffForHumans() }}</div>
         </div>
         <form method="POST" action="{{ route('admin.announcements.destroy', $ann->id) }}" onsubmit="return confirm('Törlés?')">
             @csrf @method('DELETE')
@@ -407,7 +453,7 @@
 @if(auth()->user()->is_admin)
 <div id="panel-categories" class="admin-panel">
 <div class="card" style="margin-bottom:16px">
-    <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:16px">Új kategória</div>
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:16px">Új kategória</div>
     <form method="POST" action="{{ route('admin.categories.store') }}" style="display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:8px;align-items:flex-end">
         @csrf
         <div><label class="form-label">Név</label><input type="text" name="name" class="form-input" required></div>
@@ -452,33 +498,32 @@
     $statusColors = ['DRAFT'=>'badge-gray','SUBMITTED'=>'badge-yellow','APPROVED'=>'badge-green','REJECTED'=>'badge-red'];
 @endphp
 <div class="card" style="margin-bottom:12px;padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <span style="color:#4a5568;font-size:13px">Szűrő:</span>
+    <span style="color:var(--fg-subtle);font-size:13px">Szűrő:</span>
     @foreach([''=>'Összes','SUBMITTED'=>'Beküldve','APPROVED'=>'Jóváhagyva','REJECTED'=>'Elutasítva','DRAFT'=>'Vázlat'] as $s=>$l)
     <button type="button" class="btn btn-ghost filter-btn" data-status="{{ $s }}" style="font-size:11px;padding:4px 10px" onclick="filterReports('{{ $s }}', this)">{{ $l }}</button>
     @endforeach
 </div>
 <div class="card" style="padding:0;overflow:hidden">
 <div style="overflow-x:auto">
-<table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead><tr style="border-bottom:1px solid #1e2d3d">
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Cím</th>
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Szerző</th>
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Állapot</th>
-        <th style="padding:10px 16px;text-align:left;color:#4a5568;font-weight:500">Dátum</th>
-        <th style="padding:10px 16px;text-align:right;color:#4a5568;font-weight:500"></th>
+<table class="table">
+    <thead><tr>
+        <th>Cím</th>
+        <th>Szerző</th>
+        <th>Állapot</th>
+        <th>Dátum</th>
+        <th></th>
     </tr></thead>
     <tbody>
     @forelse($allReports as $r)
-    <tr class="report-row" data-status="{{ $r->status }}" style="border-bottom:1px solid #111c2a;transition:background .12s"
-        onmouseover="this.style.background='#0d1826'" onmouseout="this.style.background=''">
-        <td style="padding:10px 16px;color:#fff;font-weight:500;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $r->title }}</td>
-        <td style="padding:10px 16px;color:#8b949e">{{ $r->author->in_game_name ?? $r->author->name ?? '—' }}</td>
-        <td style="padding:10px 16px"><span class="status-badge {{ $statusColors[$r->status] ?? 'badge-gray' }}">{{ $statusLabels[$r->status] ?? $r->status }}</span></td>
-        <td style="padding:10px 16px;color:#4a5568;font-size:12px">{{ $r->created_at->format('Y.m.d H:i') }}</td>
-        <td style="padding:10px 16px;text-align:right"><a href="{{ route('jelentesek.show', $r->id) }}" class="btn btn-ghost" style="font-size:11px;padding:4px 10px">Megnyit →</a></td>
+    <tr class="report-row" data-status="{{ $r->status }}">
+        <td style="color:var(--fg);font-weight:500;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $r->title }}</td>
+        <td>{{ $r->author->in_game_name ?? $r->author->name ?? '—' }}</td>
+        <td><span class="badge {{ $statusColors[$r->status] ?? 'badge-gray' }}">{{ $statusLabels[$r->status] ?? $r->status }}</span></td>
+        <td style="font-size:12px">{{ $r->created_at->format('Y.m.d H:i') }}</td>
+        <td style="text-align:right"><a href="{{ route('jelentesek.show', $r->id) }}" class="btn btn-ghost" style="font-size:11px;padding:4px 10px">Megnyit →</a></td>
     </tr>
     @empty
-    <tr><td colspan="5" style="padding:32px;text-align:center;color:#4a5568">Nincsenek jelentések.</td></tr>
+    <tr><td colspan="5" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincsenek jelentések.</td></tr>
     @endforelse
     </tbody>
 </table>
@@ -491,7 +536,7 @@
 {{-- ════ SETTINGS ════ --}}
 <div id="panel-settings" class="admin-panel">
 <div class="card">
-    <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:16px">Általános beállítások</div>
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:16px">Általános beállítások</div>
     <form method="POST" action="/admin/settings">
         @csrf @method('PATCH')
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -520,21 +565,21 @@
 @endif
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
 <div class="card">
-    <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #1e2d3d">
-        <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:10px">Meglévő embed szerkesztése</div>
+    <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+        <div style="color:var(--fg);font-size:14px;font-weight:600;margin-bottom:10px">Meglévő embed szerkesztése</div>
         <div style="display:flex;gap:8px;margin-bottom:8px">
             <input type="text" id="loadChannelId" class="form-input" placeholder="Csatorna ID" style="flex:1">
             <button type="button" class="btn btn-ghost" style="white-space:nowrap" onclick="loadMessages()">Betöltés</button>
         </div>
-        <div id="messageList" style="display:none;max-height:200px;overflow-y:auto;background:#010409;border:1px solid #1e2d3d;border-radius:6px">
-            <div style="color:#4a5568;font-size:12px;padding:8px 12px" id="messageListInner"></div>
+        <div id="messageList" style="display:none;max-height:200px;overflow-y:auto;background:var(--bg);border:1px solid var(--border)">
+            <div style="color:var(--fg-subtle);font-size:12px;padding:8px 12px" id="messageListInner"></div>
         </div>
-        <div id="editingBadge" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#f59e0b;font-size:12px;border-radius:6px;padding:6px 12px;margin-top:8px">
+        <div id="editingBadge" class="alert alert-yellow" style="display:none;margin:8px 0 0;padding:6px 12px;font-size:12px">
             ✏️ Szerkesztési mód
-            <button type="button" onclick="clearEdit()" style="margin-left:8px;background:none;border:none;color:#f59e0b;cursor:pointer;font-size:11px">× Új embed</button>
+            <button type="button" onclick="clearEdit()" style="margin-left:8px;background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px">× Új embed</button>
         </div>
     </div>
-    <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:16px">Embed szerkesztő</div>
+    <div style="color:var(--fg);font-size:14px;font-weight:600;margin-bottom:16px">Embed szerkesztő</div>
     <form method="POST" action="{{ route('admin.discord-embed') }}" id="embedForm">
         @csrf
         <input type="hidden" name="message_id" id="editMessageId">
@@ -545,13 +590,13 @@
                 <option value="">— Válassz csatornát —</option>
                 @foreach($discordChannels as $ch)<option value="{{ $ch['id'] }}">#{{ $ch['name'] }}</option>@endforeach
             </select>
-            <div style="color:#4a5568;font-size:11px;margin-bottom:4px">Vagy adj meg kézzel:</div>
+            <div style="color:var(--fg-subtle);font-size:11px;margin-bottom:4px">Vagy adj meg kézzel:</div>
             @endif
             <input type="text" name="channel_id" id="channelIdInput" class="form-input" placeholder="Csatorna ID" required>
         </div>
         <div style="margin-bottom:14px;display:flex;align-items:flex-end;gap:10px">
             <div><label class="form-label">Szín</label><input type="color" name="color" id="embedColor" class="form-input" value="#34d399" style="height:38px;padding:4px;width:64px" oninput="updatePreview()"></div>
-            <span style="color:#4a5568;font-size:12px;padding-bottom:10px">Bal oldali csík</span>
+            <span style="color:var(--fg-subtle);font-size:12px;padding-bottom:10px">Bal oldali csík</span>
         </div>
         <div style="margin-bottom:14px"><label class="form-label">Szerző</label><input type="text" name="author_name" id="embedAuthor" class="form-input" maxlength="256" oninput="updatePreview()"></div>
         <div style="margin-bottom:14px"><label class="form-label">Cím</label><input type="text" name="title" id="embedTitle" class="form-input" maxlength="256" oninput="updatePreview()"></div>
@@ -571,7 +616,8 @@
 </div>
 <div style="position:sticky;top:20px">
     <div class="card">
-        <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:12px">Előnézet</div>
+        <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:12px">Előnézet</div>
+        {{-- Discord message mockup below: colors intentionally match Discord's own UI, not the app theme --}}
         <div style="background:#313338;border-radius:8px;padding:16px;min-height:80px">
             <div id="prev-empty" style="color:#4a5568;font-size:13px;text-align:center;padding:20px 0">Töltsd ki a mezőket az előnézethez</div>
             <div id="embedPreview" style="display:none;background:#2b2d31;border-radius:4px;overflow:hidden;border-left:4px solid #34d399;padding:14px 16px">
@@ -596,8 +642,8 @@
 {{-- ════ SYNC ════ --}}
 <div id="panel-sync" class="admin-panel">
 <div class="card">
-    <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:8px">Discord szinkronizáció</div>
-    <p style="color:#8b949e;font-size:13px;margin-bottom:12px">Lekéri az összes szerver tagot Discord-ról és frissíti/létrehozza a fiókjukat.</p>
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:8px">Discord szinkronizáció</div>
+    <p style="color:var(--fg-subtle);font-size:13px;margin-bottom:12px">Lekéri az összes szerver tagot Discord-ról és frissíti/létrehozza a fiókjukat.</p>
     <div class="alert alert-yellow" style="margin-bottom:16px">
         <strong>Előfeltétel:</strong> Minden ranghoz be kell állítani a Discord szerepkör ID-t a <strong>Rangok</strong> szekcióban.
     </div>
@@ -607,21 +653,44 @@
 
 {{-- ════ MESSAGES ════ --}}
 <div id="panel-messages" class="admin-panel">
-<div class="card">
-    <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:12px">Intranet üzenetek (legutóbbi 50)</div>
-    @forelse($messages as $msg)
-    <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #1e2d3d">
-        <div style="flex:1">
-            <div style="color:#8b949e;font-size:12px;margin-bottom:4px">{{ $msg->author->name }} · {{ $msg->created_at->diffForHumans() }}</div>
-            <div style="color:#fff;font-size:13px">{{ $msg->content }}</div>
+<div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);color:var(--fg-subtle);font-size:13px">
+        Intranet beszélgetések ({{ $conversations->count() }})
+    </div>
+    @forelse($conversations as $conv)
+    <div style="border-bottom:1px solid var(--border)">
+        <div style="padding:14px 20px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="toggleConv({{ $conv->id }})">
+            <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+                    <span style="color:var(--fg);font-weight:600;font-size:14px">{{ $conv->displayName() }}</span>
+                    <span class="badge badge-gray">{{ $conv->typeLabel() }}</span>
+                </div>
+                <div style="color:var(--fg-subtle);font-size:12px">
+                    {{ $conv->messages_count }} üzenet · legutóbbi {{ $conv->messages->first()?->created_at->diffForHumans() }}
+                </div>
+            </div>
+            <form method="POST" action="/admin/conversations/{{ $conv->id }}" onsubmit="return confirm('Biztosan törlöd a teljes beszélgetést, minden üzenetével együtt?')" onclick="event.stopPropagation()">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn btn-danger" style="font-size:12px;padding:4px 10px">Teljes törlés</button>
+            </form>
         </div>
-        <form method="POST" action="/admin/messages/{{ $msg->id }}" onsubmit="return confirm('Törlés?')">
-            @csrf @method('DELETE')
-            <button type="submit" class="btn btn-danger" style="font-size:11px;padding:4px 8px">Törlés</button>
-        </form>
+        <div id="convMsgs-{{ $conv->id }}" style="display:none;padding:0 20px 16px">
+            @foreach($conv->messages as $msg)
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 0;border-top:1px solid var(--border)">
+                <div style="flex:1">
+                    <div style="color:var(--fg-subtle);font-size:12px;margin-bottom:2px">{{ $msg->author->in_game_name ?? $msg->author->name }} · {{ $msg->created_at->diffForHumans() }}</div>
+                    <div style="color:var(--fg);font-size:13px">{{ $msg->content }}</div>
+                </div>
+                <form method="POST" action="/admin/messages/{{ $msg->id }}" onsubmit="return confirm('Törlés?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-danger" style="font-size:11px;padding:3px 8px">Törlés</button>
+                </form>
+            </div>
+            @endforeach
+        </div>
     </div>
     @empty
-    <p style="color:#4a5568;font-size:14px">Nincsenek üzenetek.</p>
+    <p style="color:var(--fg-subtle);font-size:14px;padding:20px">Nincsenek beszélgetések.</p>
     @endforelse
 </div>
 </div>
@@ -635,6 +704,21 @@
 // ── Panel switching ───────────────────────────────────────────────────────────
 const _defaultPanel = '{{ auth()->user()->is_admin ? "users" : "reports" }}';
 let _annMde = null;
+
+function toggleConv(id) {
+    const el = document.getElementById('convMsgs-' + id);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openEditDept(id, name, short, max) {
+    document.getElementById('editDeptForm').action = `/admin/departments/${id}`;
+    document.getElementById('editDeptName').value  = name;
+    document.getElementById('editDeptShort').value = short;
+    document.getElementById('editDeptMax').value   = max;
+    openModal('editDeptModal');
+}
 
 function showPanel(name) {
     document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
@@ -730,7 +814,7 @@ function addField() {
     div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr auto auto;gap:4px;margin-bottom:6px;align-items:center';
     div.innerHTML = `<input type="text" name="fields[${i}][name]" class="form-input" placeholder="Mező neve" style="font-size:12px" oninput="updatePreview()">
         <input type="text" name="fields[${i}][value]" class="form-input" placeholder="Mező értéke" style="font-size:12px" oninput="updatePreview()">
-        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#8b949e;white-space:nowrap;padding:0 4px"><input type="checkbox" name="fields[${i}][inline]" value="1" onchange="updatePreview()"> Egy sor</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--fg-subtle);white-space:nowrap;padding:0 4px"><input type="checkbox" name="fields[${i}][inline]" value="1" onchange="updatePreview()"> Egy sor</label>
         <button type="button" onclick="removeField(${i})" class="btn btn-danger" style="font-size:12px;padding:4px 8px;line-height:1">×</button>`;
     document.getElementById('fieldsContainer').appendChild(div);
     updatePreview();
@@ -777,19 +861,19 @@ async function loadMessages() {
     const channelId = document.getElementById('loadChannelId').value.trim();
     if (!channelId) return;
     const list=document.getElementById('messageList'); const inner=document.getElementById('messageListInner');
-    list.style.display=''; inner.innerHTML='<span style="color:#8b949e;padding:8px 12px;display:block">Betöltés...</span>';
+    list.style.display=''; inner.innerHTML='<span style="color:var(--fg-subtle);padding:8px 12px;display:block">Betöltés...</span>';
     try {
         const res = await fetch('{{ route('admin.discord-messages') }}?channel_id='+encodeURIComponent(channelId),{headers:{'Accept':'application/json'}});
         const data = await res.json();
-        if(data.error){inner.innerHTML='<span style="color:#f87171;padding:8px 12px;display:block">'+data.error+'</span>';return;}
-        if(!data.length){inner.innerHTML='<span style="color:#4a5568;padding:8px 12px;display:block">Nincs embed üzenet.</span>';return;}
+        if(data.error){inner.innerHTML='<span style="color:var(--destructive);padding:8px 12px;display:block">'+data.error+'</span>';return;}
+        if(!data.length){inner.innerHTML='<span style="color:var(--fg-subtle);padding:8px 12px;display:block">Nincs embed üzenet.</span>';return;}
         inner.innerHTML=data.map(m=>{
             const e=m.embed||{};const ts=m.timestamp?new Date(m.timestamp).toLocaleString('hu'):'';
             const label=(e.title||e.description||'(cím nélkül)').substring(0,60);
             const encoded=encodeURIComponent(JSON.stringify(m));
-            return '<div onclick="loadEmbed(decodeURIComponent(\''+encoded+'\'),\''+channelId+'\')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #1e2d3d;font-size:13px;color:#fff" onmouseover="this.style.background=\'#1a2332\'" onmouseout="this.style.background=\'\'"><div style="font-weight:500">'+label+'</div><div style="color:#4a5568;font-size:11px">'+m.author+' · '+ts+'</div></div>';
+            return '<div onclick="loadEmbed(decodeURIComponent(\''+encoded+'\'),\''+channelId+'\')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;color:var(--fg)" onmouseover="this.style.background=\'var(--surface-2)\'" onmouseout="this.style.background=\'\'"><div style="font-weight:500">'+label+'</div><div style="color:var(--fg-subtle);font-size:11px">'+m.author+' · '+ts+'</div></div>';
         }).join('');
-    } catch(e) { inner.innerHTML='<span style="color:#f87171;padding:8px 12px;display:block">Hálózati hiba.</span>'; }
+    } catch(e) { inner.innerHTML='<span style="color:var(--destructive);padding:8px 12px;display:block">Hálózati hiba.</span>'; }
 }
 function loadEmbed(msgJson, channelId) {
     const m=typeof msgJson==='string'?JSON.parse(msgJson):msgJson; const e=m.embed||{};

@@ -4,22 +4,17 @@
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.css">
 <style>
-.status-badge{padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600}
-.md-body h1,.md-body h2,.md-body h3{color:#fff;margin:12px 0 6px}
+.md-body h1,.md-body h2,.md-body h3{color:var(--fg);margin:12px 0 6px}
 .md-body p{margin-bottom:8px}
 .md-body ul,.md-body ol{padding-left:20px;margin-bottom:8px}
-.md-body code{background:#1e2d3d;color:#34d399;padding:1px 5px;border-radius:3px;font-size:12px}
-.md-body pre{background:#1e2d3d;padding:10px;border-radius:6px;overflow-x:auto;margin-bottom:8px}
-.md-body a{color:#34d399}
-.CodeMirror{background:oklch(0.145 0 0) !important;color:oklch(0.985 0 0) !important;border-color:oklch(1 0 0 / 10%) !important}
-.editor-toolbar{background:oklch(0.205 0 0) !important;border-color:oklch(1 0 0 / 10%) !important}
-.editor-toolbar button{color:oklch(0.708 0 0) !important}
-.editor-toolbar button:hover,.editor-toolbar button.active{background:oklch(1 0 0 / 10%) !important;color:oklch(0.985 0 0) !important}
-.editor-preview{background:oklch(0.145 0 0) !important;color:oklch(0.985 0 0) !important}
-.status-DRAFT{background:rgba(139,148,158,.15);color:#8b949e}
-.status-SUBMITTED{background:rgba(245,158,11,.15);color:#f59e0b}
-.status-APPROVED{background:rgba(52,211,153,.15);color:#34d399}
-.status-REJECTED{background:rgba(248,113,113,.15);color:#f87171}
+.md-body code{background:var(--surface-2);color:var(--accent);padding:1px 5px;border-radius:3px;font-size:12px}
+.md-body pre{background:var(--surface-2);padding:10px;border-radius:6px;overflow-x:auto;margin-bottom:8px}
+.md-body a{color:var(--accent)}
+.CodeMirror{background:var(--bg) !important;color:var(--fg) !important;border-color:var(--border) !important}
+.editor-toolbar{background:var(--surface) !important;border-color:var(--border) !important}
+.editor-toolbar button{color:var(--fg-subtle) !important}
+.editor-toolbar button:hover,.editor-toolbar button.active{background:var(--border) !important;color:var(--fg) !important}
+.editor-preview{background:var(--bg) !important;color:var(--fg) !important}
 </style>
 @endpush
 
@@ -31,13 +26,14 @@
     $canManage = $user->is_admin || $user->is_supervisor;
     $canEdit = $canManage || (($isAuthor || $isConnected) && $report->status !== 'APPROVED');
     $statusLabels = ['DRAFT'=>'Vázlat','SUBMITTED'=>'Beküldve','APPROVED'=>'Jóváhagyva','REJECTED'=>'Elutasítva'];
+    $statusBadges = ['DRAFT'=>'badge-gray','SUBMITTED'=>'badge-yellow','APPROVED'=>'badge-green','REJECTED'=>'badge-red'];
     $categoryLabels = $categories->pluck('name','slug')->toArray();
 @endphp
 
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
     <a href="{{ route('jelentesek') }}" class="btn btn-ghost" style="padding:6px 12px">← Vissza</a>
-    <h1 style="color:#fff;font-size:20px;font-weight:700;flex:1">{{ $report->title }}</h1>
-    <span class="status-badge status-{{ $report->status }}">{{ $statusLabels[$report->status] }}</span>
+    <h1 style="color:var(--fg);font-size:20px;font-weight:700;flex:1">{{ $report->title }}</h1>
+    <span class="badge {{ $statusBadges[$report->status] ?? 'badge-gray' }}">{{ $statusLabels[$report->status] }}</span>
 </div>
 
 @if(session('success'))
@@ -51,12 +47,12 @@
 @endif
 
 <div class="card" style="margin-bottom:16px">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #1e2d3d">
-        <div><div class="form-label">Szerző</div><div style="color:#fff;font-size:14px">{{ $report->author->in_game_name ?? $report->author->name }}</div></div>
-        <div><div class="form-label">Kategória</div><div style="color:#fff;font-size:14px">{{ $categoryLabels[$report->category] }}</div></div>
-        <div><div class="form-label">Dátum</div><div style="color:#fff;font-size:14px">{{ $report->created_at->format('Y. m. d.') }}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+        <div><div class="form-label">Szerző</div><div style="color:var(--fg);font-size:14px">{{ $report->author->in_game_name ?? $report->author->name }}</div></div>
+        <div><div class="form-label">Kategória</div><div style="color:var(--fg);font-size:14px">{{ $categoryLabels[$report->category] }}</div></div>
+        <div><div class="form-label">Dátum</div><div style="color:var(--fg);font-size:14px">{{ $report->created_at->format('Y. m. d.') }}</div></div>
     </div>
-    <div class="md-body" id="reportBody" style="color:#8b949e;font-size:14px;line-height:1.7">{{ $report->content }}</div>
+    <div class="md-body" id="reportBody" style="color:var(--fg-muted);font-size:14px;line-height:1.7">{{ $report->content }}</div>
 </div>
 
 @if($report->connectedUsers->count())
@@ -72,7 +68,7 @@
 
 @if($canEdit)
 <div class="card">
-    <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:16px">Szerkesztés</div>
+    <div style="color:var(--fg);font-size:14px;font-weight:600;margin-bottom:16px">Szerkesztés</div>
     <form method="POST" action="/jelentesek/{{ $report->id }}" id="editForm">
         @csrf
         @method('PUT')

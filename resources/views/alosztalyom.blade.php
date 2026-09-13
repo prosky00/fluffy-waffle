@@ -1,10 +1,10 @@
 @extends('layouts.app')
 @section('title', 'Alosztályom')
 @section('content')
-<h1 style="color:#fff;font-size:24px;font-weight:700;margin-bottom:24px">Alosztályom</h1>
+<h1 style="color:var(--fg);font-size:24px;font-weight:700;margin-bottom:24px">Alosztályom</h1>
 
 @if(!$department)
-<div class="card"><p style="color:#4a5568;font-size:14px">Nem vagy besorolva egyetlen alosztályba sem.</p></div>
+<div class="card"><p style="color:var(--fg-subtle);font-size:14px">Nem vagy besorolva egyetlen alosztályba sem.</p></div>
 @else
 @php $members = $department->members; @endphp
 
@@ -12,10 +12,10 @@
     @if($department->logo_url)
         <img src="{{ $department->logo_url }}" style="width:56px;height:56px;border-radius:50%;object-fit:cover">
     @else
-        <div style="width:56px;height:56px;border-radius:50%;background:#1a2332;display:flex;align-items:center;justify-content:center;color:#34d399;font-size:20px;font-weight:700">{{ strtoupper(substr($department->short_name,0,1)) }}</div>
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:20px;font-weight:700">{{ strtoupper(substr($department->short_name,0,1)) }}</div>
     @endif
     <div>
-        <div style="color:#fff;font-size:18px;font-weight:700">{{ $department->name }}</div>
+        <div style="color:var(--fg);font-size:18px;font-weight:700">{{ $department->name }}</div>
         <div style="display:flex;gap:8px;margin-top:4px">
             <span class="badge badge-gray">{{ $department->short_name }}</span>
             <span class="badge badge-blue">{{ $members->count() }} / {{ $department->max_members ?: '∞' }} fő</span>
@@ -47,10 +47,10 @@
                 <tbody>
                 @foreach($members as $m)
                 <tr>
-                    <td style="color:#fff">
+                    <td style="color:var(--fg)">
                         <div style="display:flex;align-items:center;gap:8px">
                             @if($m->avatar)<img src="{{ $m->avatar }}" style="width:28px;height:28px;border-radius:50%">
-                            @else<div style="width:28px;height:28px;border-radius:50%;background:#1a2332;display:flex;align-items:center;justify-content:center;color:#34d399;font-size:11px;font-weight:700">{{ strtoupper(substr($m->name,0,1)) }}</div>
+                            @else<div style="width:28px;height:28px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:11px;font-weight:700">{{ strtoupper(substr($m->name,0,1)) }}</div>
                             @endif
                             {{ $m->in_game_name ?? $m->name }}
                         </div>
@@ -102,10 +102,10 @@
         @endif
         @if($department->rules)
         <div class="card">
-            <div style="color:#8b949e;font-size:14px;line-height:1.7">{!! $department->rules !!}</div>
+            <div style="color:var(--fg-subtle);font-size:14px;line-height:1.7">{!! $department->rules !!}</div>
         </div>
         @else
-        <div class="card"><p style="color:#4a5568;font-size:14px">Még nincs szabályzat.</p></div>
+        <div class="card"><p style="color:var(--fg-subtle);font-size:14px">Még nincs szabályzat.</p></div>
         @endif
     </div>
 
@@ -113,7 +113,7 @@
     @if($canManage)
     <div class="tab-panel" data-panel="admin">
         <div class="card" style="margin-bottom:16px">
-            <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:16px">Alosztályi rangok</div>
+            <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:16px">Alosztályi rangok</div>
             <table class="table" style="margin-bottom:16px">
                 <thead><tr><th>Név</th><th>Szint</th><th></th></tr></thead>
                 <tbody>

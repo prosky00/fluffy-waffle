@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Beállítások')
 @section('content')
-<h1 style="color:#fff;font-size:24px;font-weight:700;margin-bottom:24px">Beállítások</h1>
+<h1 style="color:var(--fg);font-size:24px;font-weight:700;margin-bottom:24px">Beállítások</h1>
 
 @if(session('success'))
 <div class="alert alert-green">{{ session('success') }}</div>
@@ -11,7 +11,7 @@
 @endif
 
 <div class="card" style="margin-bottom:16px">
-    <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:14px">Általános</div>
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:14px">Általános</div>
     <form method="POST" action="/settings">
         @csrf
         <div style="margin-bottom:16px">
@@ -23,7 +23,7 @@
 </div>
 
 <div class="card">
-    <div style="color:#fff;font-size:15px;font-weight:600;margin-bottom:14px">Jelszó megváltoztatása</div>
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:14px">Jelszó megváltoztatása</div>
     <form method="POST" action="/settings/password">
         @csrf
         <div style="margin-bottom:12px">

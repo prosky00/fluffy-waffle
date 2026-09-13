@@ -11,7 +11,6 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\IntranetController;
 use App\Http\Controllers\LekerdezoController;
 use App\Http\Controllers\AlosztalyomController;
-use App\Http\Controllers\AlosztalyAdatbazisController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UploadController;
@@ -100,8 +99,6 @@ Route::middleware(['auth', 'suspended'])->group(function () {
         Route::post('/admin/report-categories', [AdminController::class, 'storeCategory'])->name('admin.categories.store');
         Route::put('/admin/report-categories/{id}', [AdminController::class, 'updateCategory'])->name('admin.categories.update');
         Route::delete('/admin/report-categories/{id}', [AdminController::class, 'destroyCategory'])->name('admin.categories.destroy');
-        // Department discord settings
-        Route::put('/admin/departments/{id}/discord', [AdminController::class, 'updateDepartment'])->name('admin.departments.discord');
     });
 
     // Alosztályom
@@ -136,6 +133,7 @@ Route::middleware(['auth', 'suspended'])->group(function () {
 
         // Messages
         Route::delete('/admin/messages/{id}', [AdminController::class, 'deleteMessage']);
+        Route::delete('/admin/conversations/{id}', [AdminController::class, 'deleteConversation']);
 
         // Settings
         Route::patch('/admin/settings', [AdminController::class, 'updateSettings']);
@@ -145,10 +143,13 @@ Route::middleware(['auth', 'suspended'])->group(function () {
         Route::post('/admin/discord-embed', [AdminController::class, 'sendEmbed'])->name('admin.discord-embed');
         Route::get('/admin/discord-messages', [AdminController::class, 'getDiscordMessages'])->name('admin.discord-messages');
 
-        // Department database
-        Route::get('/alosztaly-adatbazis', [AlosztalyAdatbazisController::class, 'index'])->name('alosztaly-adatbazis');
-        Route::post('/alosztaly-adatbazis', [AlosztalyAdatbazisController::class, 'store']);
-        Route::put('/alosztaly-adatbazis/{id}', [AlosztalyAdatbazisController::class, 'update']);
-        Route::delete('/alosztaly-adatbazis/{id}', [AlosztalyAdatbazisController::class, 'destroy']);
+        // Departments (CRUD + Discord role/channel), all under the admin "Alosztályok" tab
+        Route::post('/admin/departments', [AdminController::class, 'storeDepartment']);
+        Route::put('/admin/departments/{id}', [AdminController::class, 'updateDepartmentInfo']);
+        Route::delete('/admin/departments/{id}', [AdminController::class, 'destroyDepartment']);
+        Route::put('/admin/departments/{id}/discord', [AdminController::class, 'updateDepartment'])->name('admin.departments.discord');
     });
 });
+
+// Old standalone department-database page moved into the admin panel's "Alosztályok" tab
+Route::redirect('/alosztaly-adatbazis', '/admin?tab=departments');
