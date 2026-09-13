@@ -347,7 +347,7 @@ class AdminController extends Controller
 
         $this->notifyApplicant($application, 'Jelentkezésed elfogadva! Add meg mikor érnél rá egy rövid interjúra a Jelentkezéseim oldalon.');
 
-        return $this->adminTab('join-requests', 'Jelentkezés elfogadva.');
+        return redirect()->route('hr.index', ['tab' => 'applications'])->with('success', 'Jelentkezés elfogadva.');
     }
 
     public function rejectJoinRequest($id)
@@ -357,7 +357,7 @@ class AdminController extends Controller
 
         $this->notifyApplicant($application, 'Jelentkezésed elutasítva. Új jelentkezést nyújthatsz be a Jelentkezéseim oldalon.');
 
-        return $this->adminTab('join-requests', 'Jelentkezés elutasítva.');
+        return redirect()->route('hr.index', ['tab' => 'applications'])->with('success', 'Jelentkezés elutasítva.');
     }
 
     public function needsChangesJoinRequest(Request $request, $id)
@@ -379,7 +379,7 @@ class AdminController extends Controller
 
         $this->notifyApplicant($application, 'A jelentkezésed néhány részéhez módosítás szükséges. Nézd meg a Jelentkezéseim oldalon.');
 
-        return $this->adminTab('join-requests', 'Módosítás kérve a jelentkezőtől.');
+        return redirect()->route('hr.index', ['tab' => 'applications'])->with('success', 'Módosítás kérve a jelentkezőtől.');
     }
 
     private function notifyApplicant(FactionApplication $application, string $message): void
@@ -410,20 +410,20 @@ class AdminController extends Controller
     {
         $data = $this->validateFormField($request);
         ApplicationFormField::create($data);
-        return $this->adminTab('join-requests', 'Mező létrehozva.');
+        return redirect()->route('hr.index', ['tab' => 'form'])->with('success', 'Mező létrehozva.');
     }
 
     public function updateFormField(Request $request, $id)
     {
         $field = ApplicationFormField::findOrFail($id);
         $field->update($this->validateFormField($request));
-        return $this->adminTab('join-requests', 'Mező frissítve.');
+        return redirect()->route('hr.index', ['tab' => 'form'])->with('success', 'Mező frissítve.');
     }
 
     public function destroyFormField($id)
     {
         ApplicationFormField::findOrFail($id)->delete();
-        return $this->adminTab('join-requests', 'Mező törölve.');
+        return redirect()->route('hr.index', ['tab' => 'form'])->with('success', 'Mező törölve.');
     }
 
     private function validateFormField(Request $request): array
