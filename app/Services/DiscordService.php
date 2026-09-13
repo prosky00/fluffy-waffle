@@ -209,6 +209,19 @@ class DiscordService
         }
     }
 
+    /** Current role IDs a guild member actually holds on Discord right now. */
+    public function getMemberRoleIds(string $discordId): array
+    {
+        if (!$this->token || !$this->guildId || !$discordId) return [];
+        try {
+            $r = Http::withHeaders(['Authorization' => "Bot {$this->token}"])
+                ->get("https://discord.com/api/v10/guilds/{$this->guildId}/members/{$discordId}");
+            return $r->successful() ? ($r->json('roles') ?? []) : [];
+        } catch (\Exception) {
+            return [];
+        }
+    }
+
     public function getGuildRoles(): array
     {
         if (!$this->token || !$this->guildId) return [];

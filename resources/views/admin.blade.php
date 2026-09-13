@@ -793,13 +793,22 @@
 
 {{-- ════ SYNC ════ --}}
 <div id="panel-sync" class="admin-panel">
-<div class="card">
-    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:8px">Discord szinkronizáció</div>
-    <p style="color:var(--fg-subtle);font-size:13px;margin-bottom:12px">Lekéri az összes szerver tagot Discord-ról és frissíti/létrehozza a fiókjukat.</p>
+<div class="card" style="margin-bottom:16px">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:8px">Discord → Weboldal</div>
+    <p style="color:var(--fg-subtle);font-size:13px;margin-bottom:12px">Lekéri az összes szerver tagot Discord-ról és frissíti/létrehozza a fiókjukat a Discord szerepköreik alapján.</p>
     <div class="alert alert-yellow" style="margin-bottom:16px">
         <strong>Előfeltétel:</strong> Minden ranghoz be kell állítani a Discord szerepkör ID-t a <strong>Rangok</strong> szekcióban.
     </div>
     <form method="POST" action="{{ route('admin.sync') }}">@csrf<button type="submit" class="btn btn-primary">Szinkronizálás indítása</button></form>
+</div>
+<div class="card">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:8px">Weboldal → Discord</div>
+    <p style="color:var(--fg-subtle);font-size:13px;margin-bottom:12px">
+        Minden csatolt Discord fiókú tagnak újraszámolja és beállítja a rang/alosztály/admin szerepköreit és a becenevét a weboldalon lévő adatok alapján.
+        Ez normál esetben automatikusan megtörténik, amint valakinek megváltozik a rangja, alosztálya, admin joga vagy neve — ezt a gombot csak akkor kell használni,
+        ha egy rang vagy alosztály Discord szerepkör ID-ját utólag módosítottad, és a régebb óta ott lévő tagoknál emiatt elavult szerepkör maradt.
+    </p>
+    <form method="POST" action="{{ route('admin.sync-push') }}">@csrf<button type="submit" class="btn btn-primary">Visszaszinkronizálás indítása</button></form>
 </div>
 </div>
 

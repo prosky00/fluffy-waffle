@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
 use App\Models\FactionSetting;
 use App\Models\Rank;
 use App\Models\User;
+use App\Services\DiscordService;
 use Illuminate\Support\Facades\Http;
 
 class DiscordSyncController extends Controller
@@ -108,5 +110,63 @@ class DiscordSyncController extends Controller
         ]);
 
         return back()->with('success', "Szinkronizálva: {$updated} frissítve, {$created} új tag, {$skipped} kihagyva (nem tag).");
+    }
+
+    /** The reverse direction of sync(): pushes each linked user's current rank,
+     *  department(s), admin status and character name out to their real Discord
+     *  roles/nickname. Unlike the per-edit auto-sync (which only reacts to a
+     *  change), this recomputes from scratch for everyone — so it also fixes
+     *  stale roles left over from remapping a rank's or department's
+     *  discord_role_id after the fact, which the reactive sync can't catch. */
+    public function pushAll()
+    {
+        $discord = app(DiscordService::class);
+
+        // The full universe of roles this app manages — anything else on a
+        // member (e.g. roles from other bots) is left untouched.
+        $rankRoleIds = Rank::whereNotNull('discord_role_id')->pluck('discord_role_id')->all();
+        $deptRoleIds = Department::whereNotNull('discord_role_id')->pluck('discord_role_id')->all();
+        $adminRoleId = FactionSetting::singleton()->discord_admin_role_id;
+        $managedRoleIds = array_unique(array_filter(array_merge($rankRoleIds, $deptRoleIds, [$adminRoleId])));
+
+        $users = User::whereNotNull('discord_id')->with(['rank', 'departments'])->get();
+        $updated = 0;
+
+        foreach ($users as $user) {
+            $desiredRoleIds = [];
+            if ($roleId = $user->rank?->discord_role_id) $desiredRoleIds[] = $roleId;
+            if ($user->is_admin && $adminRoleId) $desiredRoleIds[] = $adminRoleId;
+
+            $deptIds = $user->departments->pluck('id')->toArray();
+            if ($user->department_id) $deptIds[] = $user->department_id;
+            foreach (Department::whereIn('id', array_unique($deptIds))->whereNotNull('discord_role_id')->pluck('discord_role_id') as $roleId) {
+                $desiredRoleIds[] = $roleId;
+            }
+            $desiredRoleIds = array_unique($desiredRoleIds);
+
+            $currentRoleIds = $discord->getMemberRoleIds($user->discord_id);
+            $changed = false;
+
+            foreach (array_diff($desiredRoleIds, $currentRoleIds) as $roleId) {
+                $discord->addMemberRole($user->discord_id, $roleId);
+                $changed = true;
+            }
+            foreach (array_intersect($managedRoleIds, array_diff($currentRoleIds, $desiredRoleIds)) as $roleId) {
+                $discord->removeMemberRole($user->discord_id, $roleId);
+                $changed = true;
+            }
+            if ($user->in_game_name) {
+                $discord->setNickname($user->discord_id, $user->in_game_name);
+            }
+
+            if ($changed) $updated++;
+        }
+
+        $this->logAudit('🔄 Discord szerepkörök visszaszinkronizálva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Eredmény'      => "{$updated} tag szerepköre módosítva, " . $users->count() . " csatolt tag ellenőrizve",
+        ]);
+
+        return back()->with('success', "Kész: {$updated} tag Discord szerepköre frissítve ({$users->count()} csatolt tag ellenőrizve).");
     }
 }

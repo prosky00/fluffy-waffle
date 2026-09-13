@@ -187,6 +187,7 @@ Route::middleware(['auth', 'suspended'])->group(function () {
 
             // Discord
             Route::post('/admin/sync', [DiscordSyncController::class, 'sync'])->name('admin.sync');
+            Route::post('/admin/sync-push', [DiscordSyncController::class, 'pushAll'])->name('admin.sync-push');
             Route::post('/admin/discord-embed', [AdminController::class, 'sendEmbed'])->name('admin.discord-embed');
             Route::get('/admin/discord-messages', [AdminController::class, 'getDiscordMessages'])->name('admin.discord-messages');
             Route::get('/admin/audit-log', [AdminController::class, 'getAuditLog'])->name('admin.audit-log');
