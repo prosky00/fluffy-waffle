@@ -139,6 +139,11 @@
                     @php $unread = auth()->user()->userNotifications()->whereNull('read_at')->count(); @endphp
                     @if($unread > 0)<span class="utility-badge">{{ $unread }}</span>@endif
                 </a>
+                @if(auth()->user()->discord_id)
+                    <span title="Discord fiók csatolva">Discord ✓</span>
+                @else
+                    <a href="{{ route('auth.discord.link') }}">Discord csatolása</a>
+                @endif
                 <a href="{{ route('settings') }}">Fiókbeállítások</a>
                 <form method="POST" action="{{ route('logout') }}" style="display:contents">
                     @csrf

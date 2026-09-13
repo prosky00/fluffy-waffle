@@ -120,6 +120,7 @@
                     </select>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end;padding-bottom:4px">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_member" value="1" checked> Tag (belső hozzáférés)</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_supervisor" value="1"> Szupervisor</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_admin" value="1"> Admin</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_hr" value="1"> HR</label>
@@ -236,6 +237,7 @@
                 </div>
                 {{-- Role flags --}}
                 <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border)">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_member" value="1" {{ $u->is_member?'checked':'' }}> Tag (belső hozzáférés)</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_department_leader" value="1" {{ $u->is_department_leader?'checked':'' }}> Alosztályvezető</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_department_deputy" value="1" {{ $u->is_department_deputy?'checked':'' }}> Helyettes</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_supervisor" value="1" {{ $u->is_supervisor?'checked':'' }}> Szupervisor</label>
@@ -619,7 +621,7 @@
 <div class="card" style="margin-bottom:16px">
     <div style="color:var(--fg);font-size:14px;font-weight:600;margin-bottom:4px">Csatorna beállítások</div>
     <div style="color:var(--fg-subtle);font-size:12px;margin-bottom:16px">Melyik Discord csatornára/szerepkörre menjen az egyes funkciók értesítése.</div>
-    <form method="PATCH" action="{{ route('admin.discord-settings') }}">
+    <form method="POST" action="{{ route('admin.discord-settings') }}">
         @csrf
         @method('PATCH')
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">

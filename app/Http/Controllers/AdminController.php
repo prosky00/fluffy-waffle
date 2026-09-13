@@ -63,6 +63,7 @@ class AdminController extends Controller
             'is_supervisor' => 'nullable|boolean',
             'is_admin'      => 'nullable|boolean',
             'is_hr'         => 'nullable|boolean',
+            'is_member'     => 'nullable|boolean',
         ]);
 
         User::create([
@@ -74,6 +75,7 @@ class AdminController extends Controller
             'is_supervisor' => !empty($data['is_supervisor']),
             'is_admin'      => !empty($data['is_admin']),
             'is_hr'         => !empty($data['is_hr']),
+            'is_member'     => !empty($data['is_member']),
         ]);
 
         return $this->adminTab('users', "Fiók létrehozva. Felhasználónév: {$data['username']}");
@@ -111,6 +113,7 @@ class AdminController extends Controller
             'is_admin'                => 'nullable|boolean',
             'is_supervisor'           => 'nullable|boolean',
             'is_hr'                   => 'nullable|boolean',
+            'is_member'               => 'nullable|boolean',
             'department_id'           => 'nullable|exists:departments,id',
             'department_ids'          => 'nullable|array',
             'department_ids.*'        => 'exists:departments,id',
@@ -129,6 +132,7 @@ class AdminController extends Controller
         $oldIsAdmin      = $user->is_admin;
         $oldIsSupervisor = $user->is_supervisor;
         $oldIsHr         = $user->is_hr;
+        $oldIsMember     = $user->is_member;
 
         $newPassword = $data['new_password'] ?? null;
         $newDeptIds  = $data['department_ids'] ?? null;
@@ -136,7 +140,7 @@ class AdminController extends Controller
 
         // Checkboxes are always explicit (unchecked = absent from the request = false) —
         // unlike the other nullable fields below, where null means "leave unchanged".
-        $booleanFields = ['is_admin', 'is_supervisor', 'is_hr', 'is_department_leader', 'is_department_deputy'];
+        $booleanFields = ['is_admin', 'is_supervisor', 'is_hr', 'is_member', 'is_department_leader', 'is_department_deputy'];
         $updateData    = array_filter($data, fn($v) => $v !== null);
         foreach ($booleanFields as $field) {
             $updateData[$field] = !empty($data[$field]);
@@ -186,6 +190,9 @@ class AdminController extends Controller
         }
         if ($updateData['is_hr'] !== (bool)$oldIsHr) {
             $changes[] = $updateData['is_hr'] ? 'HR jogot kaptál' : 'HR jogod visszavonva';
+        }
+        if ($updateData['is_member'] !== (bool)$oldIsMember) {
+            $changes[] = $updateData['is_member'] ? 'Tag lettél — mostantól elérheted a belső felületet' : 'Tagságod visszavonva';
         }
 
         // Sync many-to-many department memberships and their conversations
