@@ -71,6 +71,7 @@ class IntranetController extends Controller
         $conversation = Conversation::with('participants')->findOrFail($id);
         if (!$conversation->participants->contains('id', $user->id)) {
             if (!$this->autoJoin($conversation, $user)) abort(403);
+            $conversation->load('participants');
         }
         $starred = (bool) ($conversation->participants->firstWhere('id', $user->id)?->pivot->starred ?? false);
         $conversation->participants()->updateExistingPivot($user->id, ['starred' => !$starred]);
@@ -291,6 +292,12 @@ class IntranetController extends Controller
 
     private function autoJoin(Conversation $conversation, User $user): bool
     {
+        // Admins can act on any conversation — join them so per-user state
+        // (star/trash, and message authorship) has an actual pivot row to attach to.
+        if ($user->is_admin) {
+            $conversation->participants()->syncWithoutDetaching([$user->id]);
+            return true;
+        }
         // Dept-backed GROUP conversation
         if ($conversation->department_id && $user->departments()->where('departments.id', $conversation->department_id)->exists()) {
             $conversation->participants()->syncWithoutDetaching([$user->id]);

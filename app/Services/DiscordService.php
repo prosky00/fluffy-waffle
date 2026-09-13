@@ -89,6 +89,8 @@ class DiscordService
         }
     }
 
+    /** Text channels only, each annotated with its parent category's name (if any)
+     *  so callers can label options as "Category - Channel". */
     public function getGuildChannels(): array
     {
         if (!$this->token || !$this->guildId) return [];
@@ -96,9 +98,15 @@ class DiscordService
             $r = Http::withHeaders(['Authorization' => "Bot {$this->token}"])
                 ->get("https://discord.com/api/v10/guilds/{$this->guildId}/channels");
             if ($r->successful()) {
-                return collect($r->json())
-                    ->where('type', 0)
+                $all        = collect($r->json());
+                $categories = $all->where('type', 4)->keyBy('id');
+
+                return $all->where('type', 0)
                     ->sortBy('position')
+                    ->map(function ($ch) use ($categories) {
+                        $ch['category_name'] = $categories->get($ch['parent_id'] ?? null)['name'] ?? null;
+                        return $ch;
+                    })
                     ->values()
                     ->toArray();
             }

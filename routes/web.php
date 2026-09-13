@@ -183,6 +183,7 @@ Route::middleware(['auth', 'suspended'])->group(function () {
 
             // Settings
             Route::patch('/admin/settings', [AdminController::class, 'updateSettings']);
+            Route::patch('/admin/discord-settings', [AdminController::class, 'updateDiscordSettings'])->name('admin.discord-settings');
 
             // Discord
             Route::post('/admin/sync', [DiscordSyncController::class, 'sync'])->name('admin.sync');

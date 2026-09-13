@@ -615,6 +615,74 @@
 @if($errors->has('discord'))
 <div class="alert alert-red" style="margin-bottom:16px">{{ $errors->first('discord') }}</div>
 @endif
+
+<div class="card" style="margin-bottom:16px">
+    <div style="color:var(--fg);font-size:14px;font-weight:600;margin-bottom:4px">Csatorna beállítások</div>
+    <div style="color:var(--fg-subtle);font-size:12px;margin-bottom:16px">Melyik Discord csatornára/szerepkörre menjen az egyes funkciók értesítése.</div>
+    <form method="PATCH" action="{{ route('admin.discord-settings') }}">
+        @csrf
+        @method('PATCH')
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+            <div>
+                <label class="form-label">Felhívások csatorna</label>
+                <select name="discord_announcement_channel_id" class="form-select">
+                    <option value="">— Nincs —</option>
+                    @foreach($discordChannels as $ch)
+                    <option value="{{ $ch['id'] }}" {{ $settings->discord_announcement_channel_id === $ch['id'] ? 'selected' : '' }}>
+                        {{ $ch['category_name'] ? $ch['category_name'].' — ' : '' }}{{ $ch['name'] }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Jelentések csatorna</label>
+                <select name="discord_reports_channel_id" class="form-select">
+                    <option value="">— Nincs —</option>
+                    @foreach($discordChannels as $ch)
+                    <option value="{{ $ch['id'] }}" {{ $settings->discord_reports_channel_id === $ch['id'] ? 'selected' : '' }}>
+                        {{ $ch['category_name'] ? $ch['category_name'].' — ' : '' }}{{ $ch['name'] }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Jelentkezések csatorna</label>
+                <select name="discord_applications_channel_id" class="form-select">
+                    <option value="">— Nincs —</option>
+                    @foreach($discordChannels as $ch)
+                    <option value="{{ $ch['id'] }}" {{ $settings->discord_applications_channel_id === $ch['id'] ? 'selected' : '' }}>
+                        {{ $ch['category_name'] ? $ch['category_name'].' — ' : '' }}{{ $ch['name'] }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Napló csatorna</label>
+                <select name="discord_audit_channel_id" class="form-select">
+                    <option value="">— Nincs —</option>
+                    @foreach($discordChannels as $ch)
+                    <option value="{{ $ch['id'] }}" {{ $settings->discord_audit_channel_id === $ch['id'] ? 'selected' : '' }}>
+                        {{ $ch['category_name'] ? $ch['category_name'].' — ' : '' }}{{ $ch['name'] }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Tag szerepkör</label>
+                <select name="discord_member_role_id" class="form-select">
+                    <option value="">— Nincs —</option>
+                    @foreach($discordRoles as $role)
+                    @if($role['name'] !== '@everyone')
+                    <option value="{{ $role['id'] }}" {{ $settings->discord_member_role_id === $role['id'] ? 'selected' : '' }}>{{ $role['name'] }}</option>
+                    @endif
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Mentés</button>
+    </form>
+</div>
+
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
 <div class="card">
     <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
@@ -640,7 +708,7 @@
             @if(count($discordChannels))
             <select class="form-select" style="margin-bottom:6px" onchange="document.getElementById('channelIdInput').value=this.value;updatePreview()">
                 <option value="">— Válassz csatornát —</option>
-                @foreach($discordChannels as $ch)<option value="{{ $ch['id'] }}">#{{ $ch['name'] }}</option>@endforeach
+                @foreach($discordChannels as $ch)<option value="{{ $ch['id'] }}">{{ $ch['category_name'] ? $ch['category_name'].' — ' : '' }}#{{ $ch['name'] }}</option>@endforeach
             </select>
             <div style="color:var(--fg-subtle);font-size:11px;margin-bottom:4px">Vagy adj meg kézzel:</div>
             @endif

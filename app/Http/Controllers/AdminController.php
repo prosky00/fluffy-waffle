@@ -313,7 +313,7 @@ class AdminController extends Controller
         ]);
 
         if (!empty($data['post_to_discord'])) {
-            $channelId   = config('services.discord.announcement_channel_id');
+            $channelId   = FactionSetting::singleton()->discord_announcement_channel_id ?: config('services.discord.announcement_channel_id');
             $factionName = FactionSetting::singleton()->name ?? 'Faction';
             $mention     = $data['mention_role_id'] ?? '';
             app(DiscordService::class)->sendAnnouncement($channelId, $data['title'], strip_tags($data['content']), $factionName, $mention);
@@ -404,6 +404,20 @@ class AdminController extends Controller
 
         FactionSetting::singleton()->update($data);
         return $this->adminTab('settings', 'Beállítások mentve.');
+    }
+
+    public function updateDiscordSettings(Request $request)
+    {
+        $data = $request->validate([
+            'discord_announcement_channel_id' => 'nullable|string|max:50',
+            'discord_reports_channel_id'      => 'nullable|string|max:50',
+            'discord_applications_channel_id' => 'nullable|string|max:50',
+            'discord_audit_channel_id'        => 'nullable|string|max:50',
+            'discord_member_role_id'          => 'nullable|string|max:50',
+        ]);
+
+        FactionSetting::singleton()->update($data);
+        return $this->adminTab('discord', 'Discord csatorna beállítások mentve.');
     }
 
     public function storeFormField(Request $request)
@@ -576,9 +590,9 @@ class AdminController extends Controller
 
     public function getAuditLog(Request $request)
     {
-        $channelId = config('services.discord.audit_channel_id');
+        $channelId = FactionSetting::singleton()->discord_audit_channel_id ?: config('services.discord.audit_channel_id');
         if (!$channelId) {
-            return response()->json(['error' => 'Nincs beállítva napló csatorna (DISCORD_AUDIT_CHANNEL_ID).'], 422);
+            return response()->json(['error' => 'Nincs beállítva napló csatorna. Állítsd be a Discord fülön.'], 422);
         }
 
         $raw = app(DiscordService::class)->getChannelMessages($channelId, 50);

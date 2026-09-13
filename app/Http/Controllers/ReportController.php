@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\ReportCategory;
+use App\Models\FactionSetting;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\DiscordService;
@@ -192,7 +193,7 @@ class ReportController extends Controller
         }
 
         // Discord channel embed
-        $channelId = config('services.discord.reports_channel_id');
+        $channelId = FactionSetting::singleton()->discord_reports_channel_id ?: config('services.discord.reports_channel_id');
         $token     = config('services.discord.bot_token');
         if (!$channelId || !$token) return;
 

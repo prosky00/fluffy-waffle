@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FactionSetting;
 use App\Models\Rank;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -12,7 +13,7 @@ class DiscordSyncController extends Controller
     {
         $guildId    = config('services.discord.guild_id');
         $token      = config('services.discord.bot_token');
-        $memberRole = config('services.discord.member_role_id');
+        $memberRole = FactionSetting::singleton()->discord_member_role_id ?: config('services.discord.member_role_id');
         $headers    = ['Authorization' => "Bot {$token}"];
 
         // Test bot token

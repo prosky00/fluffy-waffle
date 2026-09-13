@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ApplicationFormField;
 use App\Models\FactionApplication;
+use App\Models\FactionSetting;
 use App\Services\DiscordService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -97,7 +98,7 @@ class FactionApplicationController extends Controller
 
     private function notifyAdminsOfApplication($user, FactionApplication $application, $formFields): void
     {
-        $channelId = config('services.discord.applications_channel_id');
+        $channelId = FactionSetting::singleton()->discord_applications_channel_id ?: config('services.discord.applications_channel_id');
         if (!$channelId) return;
 
         $fields = [
