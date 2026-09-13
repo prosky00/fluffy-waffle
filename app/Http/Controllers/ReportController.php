@@ -144,7 +144,12 @@ class ReportController extends Controller
                     Notification::create(['user_id' => $notifyUser->id, 'message' => $msg]);
                 }
                 if ($notifyUser->discord_id) {
-                    app(DiscordService::class)->sendDm($notifyUser->discord_id, "📋 Faction értesítő: {$msg}");
+                    app(DiscordService::class)->sendDm($notifyUser->discord_id, '', [
+                        'title'       => '📋 Jelentés',
+                        'description' => $msg,
+                        'color'       => hexdec('F97316'),
+                        'timestamp'   => now()->toIso8601String(),
+                    ]);
                 }
             }
         }

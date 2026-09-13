@@ -215,7 +215,12 @@ class AdminController extends Controller
                 Notification::create(['user_id' => $user->id, 'message' => $msg]);
             }
             if ($user->discord_id) {
-                app(DiscordService::class)->sendDm($user->discord_id, "🔔 Fiókod frissült:\n{$msg}");
+                app(DiscordService::class)->sendDm($user->discord_id, '', [
+                    'title'       => '🔔 Fiókod frissült',
+                    'description' => $msg,
+                    'color'       => hexdec('3B82F6'),
+                    'timestamp'   => now()->toIso8601String(),
+                ]);
             }
         }
 
@@ -388,7 +393,12 @@ class AdminController extends Controller
         Notification::create(['user_id' => $applicant->id, 'message' => $message]);
 
         if ($applicant->discord_id) {
-            app(DiscordService::class)->sendDm($applicant->discord_id, "📋 Faction értesítő: {$message}");
+            app(DiscordService::class)->sendDm($applicant->discord_id, '', [
+                'title'       => '📋 Jelentkezés',
+                'description' => $message,
+                'color'       => hexdec('F97316'),
+                'timestamp'   => now()->toIso8601String(),
+            ]);
         }
     }
 

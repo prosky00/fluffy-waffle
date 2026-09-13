@@ -15,15 +15,20 @@ class DiscordService
         $this->guildId = config('services.discord.guild_id', '');
     }
 
-    public function sendDm(string $discordId, string $content): bool
+    public function sendDm(string $discordId, string $content = '', array $embed = []): bool
     {
         if (!$this->token) return false;
         try {
             $dm = Http::withHeaders(['Authorization' => "Bot {$this->token}"])
                 ->post('https://discord.com/api/v10/users/@me/channels', ['recipient_id' => $discordId]);
             if (!$dm->successful()) return false;
+
+            $payload = [];
+            if ($content) $payload['content'] = $content;
+            if ($embed)   $payload['embeds']  = [$embed];
+
             Http::withHeaders(['Authorization' => "Bot {$this->token}"])
-                ->post("https://discord.com/api/v10/channels/{$dm->json('id')}/messages", ['content' => $content]);
+                ->post("https://discord.com/api/v10/channels/{$dm->json('id')}/messages", $payload);
             return true;
         } catch (\Exception) {
             return false;

@@ -180,14 +180,20 @@ class IntranetController extends Controller
         $senderName   = $user->in_game_name ?? $user->name;
         $chatName     = $conversation->name ?: $senderName;
         $notifMsg     = "Új üzeneted érkezett ide: {$chatName}";
-        $discordPreview = "{$senderName}: " . mb_substr(strip_tags($data['content']), 0, 80);
+        $discordPreview = mb_substr(strip_tags($data['content']), 0, 200);
         $discord      = app(DiscordService::class);
         $conversation->participants
             ->where('id', '!=', $user->id)
-            ->each(function (User $p) use ($notifMsg, $discordPreview, $discord) {
+            ->each(function (User $p) use ($notifMsg, $chatName, $senderName, $discordPreview, $discord) {
                 Notification::create(['user_id' => $p->id, 'message' => $notifMsg]);
                 if ($p->discord_id) {
-                    $discord->sendDm($p->discord_id, "💬 **Intranet üzenet:** {$discordPreview}");
+                    $discord->sendDm($p->discord_id, '', [
+                        'title'       => "💬 {$chatName}",
+                        'author'      => ['name' => $senderName],
+                        'description' => $discordPreview,
+                        'color'       => hexdec('5865F2'),
+                        'timestamp'   => now()->toIso8601String(),
+                    ]);
                 }
             });
 

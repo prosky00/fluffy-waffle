@@ -62,7 +62,12 @@ class SchedulingController extends Controller
         Notification::create(['user_id' => $applicant->id, 'message' => $message]);
 
         if ($applicant->discord_id) {
-            app(DiscordService::class)->sendDm($applicant->discord_id, "📋 Faction értesítő: {$message}");
+            app(DiscordService::class)->sendDm($applicant->discord_id, '', [
+                'title'       => '📋 Jelentkezés',
+                'description' => $message,
+                'color'       => hexdec('F97316'),
+                'timestamp'   => now()->toIso8601String(),
+            ]);
         }
     }
 }
