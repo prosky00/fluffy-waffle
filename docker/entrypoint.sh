@@ -10,7 +10,9 @@ touch .env 2>/dev/null || true
 chmod 664 .env 2>/dev/null || true
 
 # ── SQLite: ensure database directory and file exist ─────────────────────────
-if grep -q "DB_CONNECTION=sqlite" .env 2>/dev/null; then
+# Checked against the real process environment (not the .env file) so this also
+# works on hosts that inject env vars directly instead of writing a .env file.
+if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
     DB_FILE="${DB_DATABASE:-/var/www/html/database/database.sqlite}"
     mkdir -p "$(dirname "$DB_FILE")"
     touch "$DB_FILE"
@@ -37,7 +39,7 @@ else
     echo "==> Not installed yet — waiting for install wizard at http://<host>/install"
 
     # Generate a throw-away key so Laravel can boot enough to serve the wizard
-    if grep -q "PLACEHOLDER\|CHANGE_ME" .env 2>/dev/null; then
+    if [ -z "$APP_KEY" ] || echo "$APP_KEY" | grep -qi "PLACEHOLDER\|CHANGE_ME"; then
         php artisan key:generate --force 2>/dev/null || true
     fi
 
