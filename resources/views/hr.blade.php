@@ -88,6 +88,32 @@
     <p style="color:var(--fg-subtle);font-size:14px;padding:20px">Nincs elbírálandó jelentkezés.</p>
     @endforelse
 </div>
+
+<div class="section-hdr" style="margin:24px 0 14px">
+    <h2>Korábbi jelentkezések</h2>
+    <div class="section-hdr-line"></div>
+</div>
+<div class="card" style="padding:0;overflow:hidden">
+    @forelse($reviewedApplications as $jr)
+    @php
+        $statusLabel = ['REJECTED' => 'Elutasítva', 'MEMBER' => 'Tag lett', 'APPROVED' => 'Elfogadva — időpontra vár'][$jr->status] ?? $jr->status;
+        $statusBadge = ['REJECTED' => 'badge-red', 'MEMBER' => 'badge-green', 'APPROVED' => 'badge-yellow'][$jr->status] ?? 'badge-gray';
+    @endphp
+    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+            <span style="color:var(--fg);font-weight:600;font-size:13px">{{ $jr->user->in_game_name ?? $jr->user->name }}</span>
+            <span style="color:var(--fg-subtle);font-size:12px;margin-left:6px">{{ '@'.$jr->user->username }}</span>
+        </div>
+        <span class="badge {{ $statusBadge }}">{{ $statusLabel }}</span>
+        <span style="color:var(--fg-subtle);font-size:11px;white-space:nowrap">
+            @if($jr->reviewer) {{ $jr->reviewer->in_game_name ?? $jr->reviewer->name }} · @endif
+            {{ ($jr->reviewed_at ?? $jr->created_at)->diffForHumans() }}
+        </span>
+    </div>
+    @empty
+    <p style="color:var(--fg-subtle);font-size:14px;padding:20px">Nincs korábbi jelentkezés.</p>
+    @endforelse
+</div>
 </div>
 
 {{-- ════ SCHEDULING ════ --}}
