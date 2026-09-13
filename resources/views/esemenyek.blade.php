@@ -4,23 +4,20 @@
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.css">
 <style>
-.event-card { border:1px solid #1e2d3d; border-radius:10px; padding:18px; background:#0d1117; margin-bottom:16px; }
-.event-card:hover { border-color:#34d39944; }
+.event-card { border:1px solid var(--border); border-radius:10px; padding:18px; background:var(--surface); margin-bottom:16px; }
+.event-card:hover { border-color:var(--accent); }
 .rsvp-btn { border:none; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
-.rsvp-going    { background:rgba(52,211,153,.15); color:#34d399; }
-.rsvp-maybe    { background:rgba(245,158,11,.15);  color:#f59e0b; }
-.rsvp-no       { background:rgba(248,113,113,.15); color:#f87171; }
-.rsvp-going.active  { background:#34d399; color:#010409; }
-.rsvp-maybe.active  { background:#f59e0b; color:#010409; }
-.rsvp-no.active     { background:#f87171; color:#010409; }
+.rsvp-going.active  { background:#34d399; color:var(--bg); }
+.rsvp-maybe.active  { background:var(--accent); color:var(--bg); }
+.rsvp-no.active     { background:var(--destructive); color:var(--bg); }
 .event-meta { display:flex; gap:16px; flex-wrap:wrap; margin:10px 0; }
-.event-meta-item { color:#4a5568; font-size:13px; display:flex; align-items:center; gap:5px; }
+.event-meta-item { color:var(--fg-subtle); font-size:13px; display:flex; align-items:center; gap:5px; }
 /* EasyMDE */
-.CodeMirror { background:#0d1117 !important; color:#c9d1d9 !important; border-color:#1e2d3d !important; }
-.editor-toolbar { background:#0d1117 !important; border-color:#1e2d3d !important; }
-.editor-toolbar button { color:#8b949e !important; }
-.editor-toolbar button:hover, .editor-toolbar button.active { background:#1e2d3d !important; color:#fff !important; }
-.editor-preview { background:#010409 !important; color:#c9d1d9 !important; }
+.CodeMirror { background:var(--bg) !important; color:var(--fg) !important; border-color:var(--border) !important; }
+.editor-toolbar { background:var(--bg) !important; border-color:var(--border) !important; }
+.editor-toolbar button { color:var(--fg-muted) !important; }
+.editor-toolbar button:hover, .editor-toolbar button.active { background:var(--surface-2) !important; color:var(--fg) !important; }
+.editor-preview { background:var(--bg) !important; color:var(--fg-muted) !important; }
 </style>
 @endpush
 
@@ -30,7 +27,7 @@
 @endphp
 
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-    <h1 style="color:#fff;font-size:24px;font-weight:700;flex:1">Események</h1>
+    <h1 style="color:var(--fg);font-size:24px;font-weight:700;flex:1">Események</h1>
     @if($canManage)
     <button type="button" class="btn btn-ghost" style="font-size:13px" onclick="toggleDescEdit()">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;margin-right:4px;vertical-align:middle"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -53,7 +50,7 @@
 @if($canManage)
 <div id="descEditForm" style="display:none;margin-bottom:16px">
     <div class="card">
-        <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:12px">Általános leírás szerkesztése</div>
+        <div style="color:var(--fg);font-size:14px;font-weight:600;margin-bottom:12px">Általános leírás szerkesztése</div>
         <form method="POST" action="{{ route('esemenyek.update') }}">
             @csrf
             <textarea name="events_content" id="eventsContentMde" class="form-textarea" rows="10"
@@ -70,14 +67,14 @@
 {{-- General description display --}}
 @if($settings->events_content)
 <div class="card" style="margin-bottom:24px" id="eventsDesc">
-    <div id="eventsDescContent" class="md-content" style="color:#dbdee1;font-size:14px;line-height:1.7">{{ $settings->events_content }}</div>
+    <div id="eventsDescContent" class="md-content" style="color:var(--fg);font-size:14px;line-height:1.7">{{ $settings->events_content }}</div>
 </div>
 @endif
 
 {{-- Events grid --}}
 @if($events->isEmpty())
 <div class="card" style="text-align:center;padding:40px">
-    <p style="color:#4a5568;font-size:15px">Még nincsenek események.
+    <p style="color:var(--fg-subtle);font-size:15px">Még nincsenek események.
     @if($canManage) Kattints az "Új esemény" gombra az első létrehozásához. @endif</p>
 </div>
 @else
@@ -93,9 +90,9 @@
     <div style="display:flex;align-items:flex-start;gap:12px">
         <div style="flex:1">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
-                <h2 style="color:#fff;font-size:16px;font-weight:700;margin:0">{{ $event->title }}</h2>
-                @if($isPast)<span style="background:rgba(139,148,158,.12);color:#8b949e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">Lezárt</span>@endif
-                @if($isFull && !$isPast)<span style="background:rgba(248,113,113,.12);color:#f87171;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">Betelt</span>@endif
+                <h2 style="color:var(--fg);font-size:16px;font-weight:700;margin:0">{{ $event->title }}</h2>
+                @if($isPast)<span class="badge badge-gray">Lezárt</span>@endif
+                @if($isFull && !$isPast)<span class="badge badge-red">Betelt</span>@endif
             </div>
 
             <div class="event-meta">
@@ -131,16 +128,16 @@
             </div>
 
             @if($event->description)
-            <div class="md-content" style="color:#8b949e;font-size:13px;line-height:1.65;margin-bottom:12px">{{ $event->description }}</div>
+            <div class="md-content" style="color:var(--fg-muted);font-size:13px;line-height:1.65;margin-bottom:12px">{{ $event->description }}</div>
             @endif
 
             {{-- Who's going list (compact) --}}
             @if($event->going_users->count())
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
                 @foreach($event->going_users->take(8) as $u)
-                <span style="background:#1a2332;color:#8b949e;font-size:11px;padding:2px 8px;border-radius:20px">{{ $u->in_game_name ?? $u->name }}</span>
+                <span class="badge badge-gray">{{ $u->in_game_name ?? $u->name }}</span>
                 @endforeach
-                @if($event->going_users->count() > 8)<span style="color:#4a5568;font-size:11px;padding:2px 4px">+{{ $event->going_users->count() - 8 }}</span>@endif
+                @if($event->going_users->count() > 8)<span style="color:var(--fg-subtle);font-size:11px;padding:2px 4px">+{{ $event->going_users->count() - 8 }}</span>@endif
             </div>
             @endif
 
@@ -150,19 +147,19 @@
                 <form method="POST" action="{{ route('events.rsvp', $event->id) }}">
                     @csrf
                     <input type="hidden" name="status" value="GOING">
-                    <button type="submit" class="rsvp-btn rsvp-going {{ $userStatus === 'GOING' ? 'active' : '' }}" {{ $isFull ? 'disabled style="opacity:.4;cursor:not-allowed"' : '' }}>
+                    <button type="submit" class="rsvp-btn rsvp-going badge-green {{ $userStatus === 'GOING' ? 'active' : '' }}" {{ $isFull ? 'disabled style="opacity:.4;cursor:not-allowed"' : '' }}>
                         ✓ Megyek{{ $isFull ? ' (telt)' : '' }}
                     </button>
                 </form>
                 <form method="POST" action="{{ route('events.rsvp', $event->id) }}">
                     @csrf
                     <input type="hidden" name="status" value="MAYBE">
-                    <button type="submit" class="rsvp-btn rsvp-maybe {{ $userStatus === 'MAYBE' ? 'active' : '' }}">? Talán</button>
+                    <button type="submit" class="rsvp-btn rsvp-maybe badge-yellow {{ $userStatus === 'MAYBE' ? 'active' : '' }}">? Talán</button>
                 </form>
                 <form method="POST" action="{{ route('events.rsvp', $event->id) }}">
                     @csrf
                     <input type="hidden" name="status" value="NOT_GOING">
-                    <button type="submit" class="rsvp-btn rsvp-no {{ $userStatus === 'NOT_GOING' ? 'active' : '' }}">✕ Nem megyek</button>
+                    <button type="submit" class="rsvp-btn rsvp-no badge-red {{ $userStatus === 'NOT_GOING' ? 'active' : '' }}">✕ Nem megyek</button>
                 </form>
             </div>
             @endif

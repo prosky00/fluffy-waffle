@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Models\Conversation;
 use App\Models\Department;
+use App\Models\DepartmentRank;
 use App\Models\FactionSetting;
 use App\Models\Message;
 use App\Models\Notification;
@@ -26,14 +27,21 @@ class AdminController extends Controller
         $ranks           = Rank::orderBy('level', 'desc')->get();
         $departments     = $user->is_admin ? Department::with('ranks')->withCount('members')->orderBy('name')->get() : collect();
         $announcements   = Announcement::with('author')->latest()->get();
-        $messages        = $user->is_admin ? Message::with(['author', 'conversation'])->latest()->take(50)->get() : collect();
+        $conversations   = $user->is_admin
+            ? Conversation::with(['participants', 'rank', 'department', 'messages.author'])
+                ->withCount('messages')
+                ->whereHas('messages')
+                ->get()
+                ->sortByDesc(fn($c) => $c->messages->first()?->created_at)
+                ->values()
+            : collect();
         $factionSettings = FactionSetting::singleton();
         $discordChannels = $user->is_admin ? $discord->getGuildChannels() : [];
         $discordRoles    = $user->is_admin ? $discord->getGuildRoles() : [];
         $categories      = ReportCategory::orderBy('sort_order')->get();
         $allReports      = Report::with('author')->latest()->get();
 
-        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'messages', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports'));
+        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports'));
     }
 
     public function storeUser(Request $request)
@@ -179,6 +187,37 @@ class AdminController extends Controller
         return $this->adminTab('departments', 'Alosztály frissítve.');
     }
 
+    public function storeDepartment(Request $request)
+    {
+        $data = $request->validate([
+            'name'        => 'required|string|max:100|unique:departments',
+            'short_name'  => 'required|string|max:20',
+            'max_members' => 'required|integer|min:0',
+        ]);
+        $dept = Department::create($data);
+        // Auto-create a default "Alosztályvezető" rank for every new department
+        DepartmentRank::create(['department_id' => $dept->id, 'name' => 'Alosztályvezető', 'level' => 1]);
+        return $this->adminTab('departments', 'Alosztály létrehozva.');
+    }
+
+    public function updateDepartmentInfo(Request $request, $id)
+    {
+        $dept = Department::findOrFail($id);
+        $data = $request->validate([
+            'name'        => "required|string|max:100|unique:departments,name,{$id}",
+            'short_name'  => 'required|string|max:20',
+            'max_members' => 'required|integer|min:0',
+        ]);
+        $dept->update($data);
+        return $this->adminTab('departments', 'Alosztály frissítve.');
+    }
+
+    public function destroyDepartment($id)
+    {
+        Department::findOrFail($id)->delete();
+        return $this->adminTab('departments', 'Alosztály törölve.');
+    }
+
     public function storeRank(Request $request)
     {
         $data = $request->validate([
@@ -247,6 +286,12 @@ class AdminController extends Controller
     {
         Message::findOrFail($id)->delete();
         return $this->adminTab('messages', 'Üzenet törölve.');
+    }
+
+    public function deleteConversation($id)
+    {
+        Conversation::findOrFail($id)->delete();
+        return $this->adminTab('messages', 'Beszélgetés törölve.');
     }
 
     public function updateSettings(Request $request)
