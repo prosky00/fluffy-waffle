@@ -622,12 +622,33 @@ class AdminController extends Controller
                 'id'        => $m['id'],
                 'timestamp' => $m['timestamp'],
                 'author'    => $m['author']['username'] ?? 'Bot',
-                'content'   => $m['content'] ?? '',
+                'content'   => $this->auditEntryText($m),
             ])
             ->filter(fn($e) => $e['content'] !== '')
             ->values();
 
         return response()->json($entries);
+    }
+
+    /** Audit bots commonly post as embeds (title + fields) rather than plain content —
+     *  flatten either shape into one markdown-ish text block for the log to display. */
+    private function auditEntryText(array $message): string
+    {
+        if (!empty($message['content'])) {
+            return $message['content'];
+        }
+
+        $embed = $message['embeds'][0] ?? null;
+        if (!$embed) return '';
+
+        $lines = [];
+        if (!empty($embed['title'])) $lines[] = "**{$embed['title']}**";
+        if (!empty($embed['description'])) $lines[] = $embed['description'];
+        foreach ($embed['fields'] ?? [] as $field) {
+            $lines[] = "{$field['name']}: {$field['value']}";
+        }
+
+        return implode("\n", $lines);
     }
 
     public function storeChangelog(Request $request)
