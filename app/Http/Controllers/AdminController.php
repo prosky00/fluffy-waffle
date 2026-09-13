@@ -526,7 +526,9 @@ class AdminController extends Controller
         ]);
 
         $settings = FactionSetting::singleton();
-        $changed  = collect($data)->filter(fn($v, $k) => $v !== $settings->$k)->keys();
+        // Loose comparison: form fields arrive as strings (e.g. hr_department_id="1")
+        // while the model casts them (int), so a strict !== would flag a false change.
+        $changed  = collect($data)->filter(fn($v, $k) => $v != $settings->$k)->keys();
 
         $settings->update($data);
 
