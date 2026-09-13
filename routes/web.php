@@ -113,6 +113,9 @@ Route::middleware(['auth', 'suspended'])->group(function () {
         Route::post('/intranet/{id}/messages', [IntranetController::class, 'sendMessage']);
         Route::delete('/intranet/messages/{id}', [IntranetController::class, 'deleteMessage']);
         Route::get('/intranet/{id}/messages', [IntranetController::class, 'pollMessages'])->name('intranet.poll');
+        Route::post('/intranet/{id}/star', [IntranetController::class, 'toggleStar']);
+        Route::post('/intranet/{id}/trash', [IntranetController::class, 'trashConversation']);
+        Route::post('/intranet/{id}/restore', [IntranetController::class, 'restoreConversation']);
 
         // Állomány
         Route::get('/allomany', [AllomanyController::class, 'index'])->name('allomany');
