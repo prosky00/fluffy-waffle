@@ -61,13 +61,16 @@ COPY --from=node-builder /app/public/build public/build
 # Install PHP dependencies (no dev, optimised autoloader)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
-# Permissions: storage and bootstrap cache must be writable by www-data
-# Also create storage/app/public and the public/storage symlink at build time
+# Permissions: storage, bootstrap cache, and database must be writable by www-data
+# (the actual user php-fpm's worker processes run as, not root) — the SQLite file
+# itself being writable isn't enough, SQLite also needs to create journal/WAL
+# files in the same directory, so the "database" directory itself must be writable
+# too. Also create storage/app/public and the public/storage symlink at build time
 # so uploaded files are served correctly regardless of runtime user permissions
 RUN mkdir -p storage/logs storage/framework/{cache,sessions,views} storage/app/public bootstrap/cache \
     && ln -sf ../storage/app/public public/storage \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache database \
+    && chmod -R 775 storage bootstrap/cache database
 
 # Entrypoint handles first-run setup
 COPY docker/entrypoint.sh /entrypoint.sh
