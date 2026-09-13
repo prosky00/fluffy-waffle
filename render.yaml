@@ -6,8 +6,10 @@ services:
     autoDeploy: true
     # Render's Docker Command replaces the image's ENTRYPOINT too, not just CMD —
     # so it must invoke entrypoint.sh itself (which runs first-boot setup, the
-    # APP_KEY fix, and demo seeding) and pass the real server command as its args.
-    dockerCommand: /entrypoint.sh php artisan serve --host=0.0.0.0 --port=$PORT
+    # APP_KEY fix, and demo seeding), which then hands off to render-cmd.sh
+    # (nginx + php-fpm in this one container — php artisan serve isn't reliable
+    # enough to stay up under real traffic).
+    dockerCommand: /entrypoint.sh /render-cmd.sh
     envVars:
       - key: APP_NAME
         value: "Faction Dashboard (preview)"
