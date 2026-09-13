@@ -275,7 +275,7 @@
     <nav>
         <div class="nav-group">
             <div class="nav-category">Állomány</div>
-            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                 Főoldal
             </a>
@@ -318,6 +318,20 @@
                 </a>
             @endif
         </div>
+
+        @if(auth()->user()->isHr())
+        <div class="nav-group">
+            <div class="nav-category">HR</div>
+            <a href="{{ route('hr.index') }}" class="nav-link {{ request()->is('hr*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span style="flex:1;text-align:left">HR</span>
+                @php $_pendingApps = \App\Models\FactionApplication::where('status', 'PENDING')->count(); @endphp
+                @if($_pendingApps > 0)
+                <span class="badge badge-red" style="font-size:10px;padding:1px 6px">{{ $_pendingApps }}</span>
+                @endif
+            </a>
+        </div>
+        @endif
 
         @if(auth()->user()->is_admin || auth()->user()->is_supervisor)
         <div class="nav-group">
@@ -377,6 +391,15 @@
     </div>
 </aside>
 
+<div class="modal-backdrop" id="notifDetailModal">
+    <div class="modal" style="max-width:420px">
+        <button class="modal-close" onclick="closeModal('notifDetailModal')">&times;</button>
+        <div class="modal-title">Értesítés</div>
+        <p id="notifDetailText" style="color:var(--fg);font-size:14px;line-height:1.6;white-space:pre-wrap;margin-bottom:8px"></p>
+        <p id="notifDetailTime" style="color:var(--fg-subtle);font-size:12px"></p>
+    </div>
+</div>
+
 <main class="main">
     @yield('content')
 </main>
@@ -402,6 +425,8 @@ function toggleBell(e) {
     if (dd.classList.contains('open')) loadNotifications();
 }
 
+let _notifCache = {};
+
 function loadNotifications() {
     fetch('{{ route("notifications.unread") }}')
         .then(r => r.json())
@@ -413,10 +438,11 @@ function loadNotifications() {
                 list.innerHTML = '<div class="bell-empty">Nincsenek értesítések.</div>';
                 return;
             }
+            data.notifications.forEach(n => _notifCache[n.id] = n);
             list.innerHTML = data.notifications.map(n => `
                 <div class="bell-notif-item" id="bni-${n.id}">
                     <span class="bell-notif-dot ${n.read ? 'read' : 'unread'}"></span>
-                    <span class="bell-notif-text">${escHtml(n.message)}</span>
+                    <span class="bell-notif-text" onclick="showNotifDetail(${n.id})" style="cursor:pointer">${escHtml(n.message)}</span>
                     <span class="bell-notif-time">${escHtml(n.time)}</span>
                     <span class="bell-notif-actions">
                         ${!n.read ? `<button class="bell-notif-btn" onclick="readNotif(${n.id})" title="Olvasott">✓</button>` : ''}
@@ -424,6 +450,17 @@ function loadNotifications() {
                     </span>
                 </div>`).join('');
         });
+}
+
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+function showNotifDetail(id) {
+    const n = _notifCache[id];
+    if (!n) return;
+    document.getElementById('notifDetailText').textContent = n.message;
+    document.getElementById('notifDetailTime').textContent = n.time;
+    openModal('notifDetailModal');
 }
 
 function escHtml(s) {

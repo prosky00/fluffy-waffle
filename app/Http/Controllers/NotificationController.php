@@ -9,7 +9,8 @@ class NotificationController extends Controller
     public function index()
     {
         $notifications = auth()->user()->userNotifications()->paginate(20);
-        return $this->view('notifications', compact('notifications'));
+        $view = auth()->user()->is_member ? 'notifications' : 'guest-notifications';
+        return $this->view($view, compact('notifications'));
     }
 
     // JSON feed for the bell dropdown

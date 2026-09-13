@@ -85,6 +85,49 @@ Right-click items in Discord (with **Developer Mode** on in User Settings → Ad
 
 ---
 
+## How it works
+
+### Roles
+
+| Role | What it means |
+|---|---|
+| **Guest** | Has an account but hasn't been accepted into the faction yet (`is_member = false`). Can only see the public front page, apply to join, change their own username/password, and read their own notifications. |
+| **Member** | Accepted into the faction (`is_member = true`). Gets the full internal dashboard — reports, events, intranet, roster, etc. |
+| **Supervisor** | A member with limited admin rights (announcements, report categories, department Discord settings). |
+| **Admin** | Full access to everything, including user management and the front-page editor. |
+| **HR** | Can review join applications, run interview scheduling, and edit the application form — without needing full admin rights. Granted three ways (any one is enough): the "HR" checkbox on a user (Admin → Felhasználók), membership in a department chosen as the HR department (Admin → Beállítások), or being an Admin. |
+
+### Joining the faction
+
+The site has no open self-registration into the faction — creating an account and becoming a member are two separate steps:
+
+1. **Regisztráció** (`/regisztracio`) — anyone can create a basic account instantly (username, password, character name). This only makes them a **Guest**; it does not grant access to anything internal.
+2. **Csatlakozz hozzánk / Jelentkezéseim** (`/jelentkezes`) — a logged-in guest fills out the application form (its fields are fully configurable, see below) and submits it. This pings the `DISCORD_APPLICATIONS_CHANNEL_ID` channel and shows up for HR/Admins to review.
+3. **Review** — an HR/Admin either:
+   - **Elfogad** (Approve) → the applicant is asked to propose interview time slots on their Jelentkezéseim page.
+   - **Elutasít** (Reject) → application closed; the guest can submit a new one later.
+   - **Módosítás kérése** (Needs changes) → the reviewer picks which specific answer(s) need work and leaves a note; the applicant can only edit those fields and resubmits for another review pass.
+4. **Scheduling** — once approved, the applicant lists a few candidate interview dates/times; an HR/Admin picks one to confirm from the HR menu's "Ütemezés" tab.
+5. **Decision** — after the interview, HR either grants access (flips the account to full Member, unlocking the dashboard) or rejects the application.
+
+Every step notifies the applicant both in-app (bell icon) and via Discord DM if they've linked their Discord account.
+
+### The front page is fully editable
+
+Nothing on the public front page is hardcoded. Admins manage it from **Admin → Weboldal**:
+- **Navigáció** — add/edit/delete/reorder the nav bar links.
+- **Főoldal szakaszok** — the page is built from an ordered list of sections (a banner strip, the red hero band, a rich-text block, a "how to join" steps block). Add, edit, reorder, hide, or delete any section; nothing about the front page's content requires a code change.
+
+### The HR menu
+
+Admins and anyone with HR access see an **HR** entry in the sidebar with four tabs:
+- **Űrlap szerkesztő** — define what fields the join application form asks for (short text, long text, dropdown, checkbox; required or optional).
+- **Jelentkezések** — review pending applications (Approve/Reject/Needs changes).
+- **Ütemezés** — confirm an interview slot for approved applicants, then grant access or reject after the interview.
+- **Értesítések** — a full read/unread archive of every notification ever sent to any user, for auditing.
+
+---
+
 ## Environment variables reference
 
 | Variable | Required | Description |
@@ -99,6 +142,7 @@ Right-click items in Discord (with **Developer Mode** on in User Settings → Ad
 | `DISCORD_GUILD_ID` | yes | Your Discord server ID |
 | `DISCORD_ANNOUNCEMENT_CHANNEL_ID` | no | Channel for announcement embeds |
 | `DISCORD_REPORTS_CHANNEL_ID` | no | Channel for report notification embeds |
+| `DISCORD_APPLICATIONS_CHANNEL_ID` | no | Channel that gets pinged when someone applies to join the faction |
 | `DISCORD_MEMBER_ROLE_ID` | no | Role ID for member verification |
 
 ---

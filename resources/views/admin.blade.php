@@ -35,6 +35,10 @@
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
     Üzenetek
 </button>
+<button class="subnav-link {{ $curTab==='page-builder' ? 'active' : '' }}" onclick="showPanel('page-builder')">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+    Weboldal
+</button>
 @endif
 
 <span class="subnav-category">Jelentések</span>
@@ -111,6 +115,7 @@
                 <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end;padding-bottom:4px">
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_supervisor" value="1"> Szupervisor</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_admin" value="1"> Admin</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_hr" value="1"> HR</label>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary" style="font-size:12px;padding:6px 14px">Fiók létrehozása</button>
@@ -158,7 +163,8 @@
         </td>
         <td>
             @if($u->is_admin)<span class="badge badge-red" style="font-size:10px;margin-right:3px">Admin</span>@endif
-            @if($u->is_supervisor)<span class="badge badge-purple" style="font-size:10px">Szupervisor</span>@endif
+            @if($u->is_supervisor)<span class="badge badge-purple" style="font-size:10px;margin-right:3px">Szupervisor</span>@endif
+            @if($u->is_hr)<span class="badge badge-yellow" style="font-size:10px">HR</span>@endif
         </td>
         <td style="text-align:right">
             <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="toggleUserEdit({{ $u->id }})">Szerkesztés</button>
@@ -227,6 +233,7 @@
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_department_deputy" value="1" {{ $u->is_department_deputy?'checked':'' }}> Helyettes</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_supervisor" value="1" {{ $u->is_supervisor?'checked':'' }}> Szupervisor</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_admin" value="1" {{ $u->is_admin?'checked':'' }}> Admin</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_hr" value="1" {{ $u->is_hr?'checked':'' }}> HR</label>
                 </div>
 
                 <div style="display:flex;gap:8px">
@@ -552,6 +559,16 @@
                 <input type="text" name="favicon_url" class="form-input" value="{{ $factionSettings->favicon_url }}">
                 <div style="margin-top:6px"><label class="form-label">Feltöltés:</label><input type="file" accept="image/*" onchange="uploadFile(this, 'favicon_url')"></div>
             </div>
+            <div>
+                <label class="form-label">HR alosztály</label>
+                <select name="hr_department_id" class="form-select">
+                    <option value="">— Nincs —</option>
+                    @foreach($departments as $dept)
+                    <option value="{{ $dept->id }}" {{ $factionSettings->hr_department_id === $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                    @endforeach
+                </select>
+                <div style="color:var(--fg-subtle);font-size:11px;margin-top:4px">Ennek az alosztálynak a tagjai hozzáférnek a HR menühöz — ugyanúgy, mint az adminok és a "HR" jelölésű felhasználók (lásd Felhasználók fül).</div>
+            </div>
         </div>
         <button type="submit" class="btn btn-primary">Mentés</button>
     </form>
@@ -695,6 +712,170 @@
 </div>
 </div>
 
+{{-- ════ PAGE BUILDER ════ --}}
+<div id="panel-page-builder" class="admin-panel">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;flex:1">Navigáció</div>
+    <button class="btn btn-primary" style="white-space:nowrap" onclick="openModal('newNavModal')">+ Új link</button>
+</div>
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:24px">
+    <table class="table">
+        <thead><tr><th>Címke</th><th>URL</th><th>Külső</th><th>Sorrend</th><th style="text-align:right"></th></tr></thead>
+        <tbody>
+        @forelse($navLinks as $link)
+        <tr>
+            <td style="color:var(--fg)">{{ $link->label }}</td>
+            <td style="color:var(--fg-subtle)">{{ $link->url }}</td>
+            <td>{{ $link->is_external ? 'Igen' : 'Nem' }}</td>
+            <td>{{ $link->sort_order }}</td>
+            <td style="text-align:right;white-space:nowrap">
+                <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="openEditNav({{ $link->id }}, '{{ addslashes($link->label) }}', '{{ addslashes($link->url) }}', {{ $link->is_external ? 'true' : 'false' }}, {{ $link->sort_order }})">Szerkesztés</button>
+                <form method="POST" action="/admin/nav-links/{{ $link->id }}" style="display:inline-block" onsubmit="return confirm('Törlöd ezt a linket?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-danger" style="font-size:11px;padding:4px 8px">Törlés</button>
+                </form>
+            </td>
+        </tr>
+        @empty
+        <tr><td colspan="5" style="padding:24px;text-align:center;color:var(--fg-subtle)">Nincs navigációs link.</td></tr>
+        @endforelse
+        </tbody>
+    </table>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;flex:1">Főoldal szakaszok</div>
+    <button class="btn btn-primary" style="white-space:nowrap" onclick="openNewSection()">+ Új szakasz</button>
+</div>
+<div class="card" style="padding:0;overflow:hidden">
+    @forelse($pageSections as $section)
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+                <span class="badge badge-gray">{{ ['banner'=>'Sáv','hero'=>'Fejléc','richtext'=>'Szöveg','steps'=>'Lépések'][$section->type] ?? $section->type }}</span>
+                <span style="color:var(--fg);font-weight:500;font-size:13px">
+                    {{ $section->data['title'] ?? $section->data['heading'] ?? $section->data['text'] ?? '—' }}
+                </span>
+                @if(!$section->is_visible)<span class="badge badge-red">Rejtett</span>@endif
+            </div>
+            <div style="color:var(--fg-subtle);font-size:11px">Sorrend: {{ $section->sort_order }}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+            <form method="POST" action="/admin/page-sections/{{ $section->id }}/toggle">
+                @csrf
+                <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:4px 8px">{{ $section->is_visible ? 'Elrejtés' : 'Megjelenítés' }}</button>
+            </form>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick='openEditSection(@json($section))'>Szerkesztés</button>
+            <form method="POST" action="/admin/page-sections/{{ $section->id }}" onsubmit="return confirm('Törlöd ezt a szakaszt?')">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn btn-danger" style="font-size:11px;padding:4px 8px">Törlés</button>
+            </form>
+        </div>
+    </div>
+    @empty
+    <p style="color:var(--fg-subtle);font-size:14px;padding:20px">Nincs szakasz — a főoldal üres lesz.</p>
+    @endforelse
+</div>
+</div>
+
+{{-- Nav link modals --}}
+<div class="modal-backdrop" id="newNavModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('newNavModal')">&times;</button>
+        <div class="modal-title">Új navigációs link</div>
+        <form method="POST" action="/admin/nav-links">
+            @csrf
+            <div style="margin-bottom:12px"><label class="form-label">Címke</label><input type="text" name="label" class="form-input" required></div>
+            <div style="margin-bottom:12px"><label class="form-label">URL</label><input type="text" name="url" class="form-input" placeholder="/jelentkezes vagy https://..." required></div>
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:6px"><input type="checkbox" name="is_external" value="1" id="newNavExternal"><label for="newNavExternal" style="color:var(--fg-subtle);font-size:13px">Külső link (új fülön nyílik)</label></div>
+            <div style="margin-bottom:16px"><label class="form-label">Sorrend</label><input type="number" name="sort_order" class="form-input" value="0"></div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn btn-primary">Létrehozás</button>
+                <button type="button" onclick="closeModal('newNavModal')" class="btn btn-ghost">Mégse</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-backdrop" id="editNavModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('editNavModal')">&times;</button>
+        <div class="modal-title">Link szerkesztése</div>
+        <form method="POST" id="editNavForm">
+            @csrf @method('PUT')
+            <div style="margin-bottom:12px"><label class="form-label">Címke</label><input type="text" name="label" id="editNavLabel" class="form-input" required></div>
+            <div style="margin-bottom:12px"><label class="form-label">URL</label><input type="text" name="url" id="editNavUrl" class="form-input" required></div>
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:6px"><input type="checkbox" name="is_external" value="1" id="editNavExternal"><label for="editNavExternal" style="color:var(--fg-subtle);font-size:13px">Külső link (új fülön nyílik)</label></div>
+            <div style="margin-bottom:16px"><label class="form-label">Sorrend</label><input type="number" name="sort_order" id="editNavOrder" class="form-input"></div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn btn-primary">Mentés</button>
+                <button type="button" onclick="closeModal('editNavModal')" class="btn btn-ghost">Mégse</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Page section modal (shared add/edit, fields toggle by type) --}}
+<div class="modal-backdrop" id="sectionModal">
+    <div class="modal" style="max-width:520px">
+        <button class="modal-close" onclick="closeModal('sectionModal')">&times;</button>
+        <div class="modal-title" id="sectionModalTitle">Új szakasz</div>
+        <form method="POST" id="sectionForm">
+            @csrf
+            <input type="hidden" name="_method" id="sectionMethod" value="POST">
+            <div style="margin-bottom:14px" id="sectionTypeField">
+                <label class="form-label">Típus</label>
+                <select id="sectionType" class="form-select" onchange="toggleSectionFields()">
+                    <option value="banner">Sáv (pl. figyelmeztetés)</option>
+                    <option value="hero">Fejléc (nagy piros sáv)</option>
+                    <option value="richtext">Szöveg (üdvözlő szöveg)</option>
+                    <option value="steps">Lépések (kártyák)</option>
+                </select>
+            </div>
+
+            <div id="fields-banner" style="display:none">
+                <div style="margin-bottom:12px"><label class="form-label">Szöveg</label><input type="text" name="text" class="form-input"></div>
+                <div style="margin-bottom:12px"><label class="form-label">Link (opcionális)</label><input type="text" name="url" class="form-input"></div>
+                <div style="margin-bottom:12px">
+                    <label class="form-label">Stílus</label>
+                    <select name="variant" class="form-select">
+                        <option value="dark">Sötét (fekete alapon fehér)</option>
+                        <option value="light">Világos (fehér alapon piros)</option>
+                        <option value="accent">Kiemelt (piros alapon fehér)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="fields-hero" style="display:none">
+                <div style="margin-bottom:12px"><label class="form-label">Előcím</label><input type="text" name="eyebrow" class="form-input" placeholder="ÜDVÖZLÜNK A"></div>
+                <div style="margin-bottom:12px"><label class="form-label">Cím</label><input type="text" name="title" class="form-input"></div>
+                <div style="margin-bottom:12px"><label class="form-label">Kép URL (opcionális)</label><input type="text" name="image_url" class="form-input"></div>
+            </div>
+
+            <div id="fields-richtext" style="display:none">
+                <div style="margin-bottom:12px"><label class="form-label">Cím (opcionális)</label><input type="text" name="richtext_heading" class="form-input"></div>
+                <div style="margin-bottom:12px"><label class="form-label">Szöveg</label><textarea name="body" class="form-textarea" rows="5"></textarea></div>
+                <div style="margin-bottom:12px;display:flex;align-items:center;gap:6px"><input type="checkbox" name="show_seal" value="1" id="sectionShowSeal"><label for="sectionShowSeal" style="color:var(--fg-subtle);font-size:13px">Embléma megjelenítése</label></div>
+            </div>
+
+            <div id="fields-steps" style="display:none">
+                <div style="margin-bottom:12px"><label class="form-label">Cím</label><input type="text" name="steps_heading" class="form-input"></div>
+                <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+                    <span class="form-label" style="margin:0">Lépések</span>
+                    <button type="button" onclick="addStepItem()" class="btn btn-ghost" style="font-size:11px;padding:3px 10px">+ Lépés</button>
+                </div>
+                <div id="stepsContainer"></div>
+            </div>
+
+            <div style="margin-bottom:16px;margin-top:14px"><label class="form-label">Sorrend</label><input type="number" name="sort_order" id="sectionOrder" class="form-input" value="0"></div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn btn-primary">Mentés</button>
+                <button type="button" onclick="closeModal('sectionModal')" class="btn btn-ghost">Mégse</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
 @endif {{-- end admin-only panels --}}
 @endsection
 
@@ -718,6 +899,83 @@ function openEditDept(id, name, short, max) {
     document.getElementById('editDeptShort').value = short;
     document.getElementById('editDeptMax').value   = max;
     openModal('editDeptModal');
+}
+
+function openEditNav(id, label, url, isExternal, sortOrder) {
+    document.getElementById('editNavForm').action  = `/admin/nav-links/${id}`;
+    document.getElementById('editNavLabel').value  = label;
+    document.getElementById('editNavUrl').value    = url;
+    document.getElementById('editNavExternal').checked = isExternal;
+    document.getElementById('editNavOrder').value  = sortOrder;
+    openModal('editNavModal');
+}
+
+function toggleSectionFields() {
+    const type = document.getElementById('sectionType').value;
+    ['banner', 'hero', 'richtext', 'steps'].forEach(t => {
+        document.getElementById('fields-' + t).style.display = t === type ? 'block' : 'none';
+    });
+}
+
+let _stepIdx = 0;
+function addStepItem(title, body) {
+    const i = _stepIdx++;
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid var(--border);padding:8px;margin-bottom:8px;border-radius:var(--radius)';
+    const t = title ? title.replace(/"/g, '&quot;') : '';
+    const b = body ? body.replace(/"/g, '&quot;') : '';
+    div.innerHTML = `
+        <input type="text" name="items[${i}][title]" class="form-input" placeholder="Cím" style="margin-bottom:6px" value="${t}">
+        <input type="text" name="items[${i}][body]" class="form-input" placeholder="Leírás" value="${b}">
+        <button type="button" onclick="this.parentElement.remove()" class="btn btn-ghost" style="font-size:11px;padding:2px 6px;margin-top:6px">Törlés</button>
+    `;
+    document.getElementById('stepsContainer').appendChild(div);
+}
+
+function openNewSection() {
+    document.getElementById('sectionForm').reset();
+    document.getElementById('sectionForm').action = '/admin/page-sections';
+    document.getElementById('sectionMethod').value = 'POST';
+    document.getElementById('sectionModalTitle').textContent = 'Új szakasz';
+    document.getElementById('sectionType').disabled = false;
+    _stepIdx = 0;
+    document.getElementById('stepsContainer').innerHTML = '';
+    document.getElementById('sectionType').value = 'banner';
+    toggleSectionFields();
+    openModal('sectionModal');
+}
+
+function openEditSection(section) {
+    const form = document.getElementById('sectionForm');
+    form.reset();
+    form.action = `/admin/page-sections/${section.id}`;
+    document.getElementById('sectionMethod').value = 'PUT';
+    document.getElementById('sectionModalTitle').textContent = 'Szakasz szerkesztése';
+    document.getElementById('sectionType').value = section.type;
+    document.getElementById('sectionType').disabled = true;
+    document.getElementById('sectionOrder').value = section.sort_order;
+    _stepIdx = 0;
+    toggleSectionFields();
+
+    const d = section.data;
+    if (section.type === 'banner') {
+        form.text.value = d.text || '';
+        form.url.value = d.url || '';
+        form.variant.value = d.variant || 'dark';
+    } else if (section.type === 'hero') {
+        form.eyebrow.value = d.eyebrow || '';
+        form.title.value = d.title || '';
+        form.image_url.value = d.image_url || '';
+    } else if (section.type === 'richtext') {
+        form.richtext_heading.value = d.heading || '';
+        form.body.value = d.body || '';
+        form.show_seal.checked = !!d.show_seal;
+    } else if (section.type === 'steps') {
+        form.steps_heading.value = d.heading || '';
+        document.getElementById('stepsContainer').innerHTML = '';
+        (d.items || []).forEach(item => addStepItem(item.title, item.body));
+    }
+    openModal('sectionModal');
 }
 
 function showPanel(name) {

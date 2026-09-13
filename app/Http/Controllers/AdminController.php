@@ -3,12 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\ApplicationFormField;
 use App\Models\Conversation;
 use App\Models\Department;
 use App\Models\DepartmentRank;
+use App\Models\FactionApplication;
 use App\Models\FactionSetting;
 use App\Models\Message;
+use App\Models\NavLink;
 use App\Models\Notification;
+use App\Models\PageSection;
 use App\Models\Rank;
 use App\Models\Report;
 use App\Models\ReportCategory;
@@ -27,6 +31,8 @@ class AdminController extends Controller
         $ranks           = Rank::orderBy('level', 'desc')->get();
         $departments     = $user->is_admin ? Department::with('ranks')->withCount('members')->orderBy('name')->get() : collect();
         $announcements   = Announcement::with('author')->latest()->get();
+        $navLinks        = $user->is_admin ? NavLink::ordered()->get() : collect();
+        $pageSections    = $user->is_admin ? PageSection::ordered()->get() : collect();
         $conversations   = $user->is_admin
             ? Conversation::with(['participants', 'rank', 'department', 'messages.author'])
                 ->withCount('messages')
@@ -41,7 +47,7 @@ class AdminController extends Controller
         $categories      = ReportCategory::orderBy('sort_order')->get();
         $allReports      = Report::with('author')->latest()->get();
 
-        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports'));
+        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports'));
     }
 
     public function storeUser(Request $request)
@@ -54,6 +60,7 @@ class AdminController extends Controller
             'rank_id'       => 'nullable|exists:ranks,id',
             'is_supervisor' => 'nullable|boolean',
             'is_admin'      => 'nullable|boolean',
+            'is_hr'         => 'nullable|boolean',
         ]);
 
         User::create([
@@ -64,6 +71,7 @@ class AdminController extends Controller
             'rank_id'       => $data['rank_id'] ?? null,
             'is_supervisor' => !empty($data['is_supervisor']),
             'is_admin'      => !empty($data['is_admin']),
+            'is_hr'         => !empty($data['is_hr']),
         ]);
 
         return $this->adminTab('users', "Fiók létrehozva. Felhasználónév: {$data['username']}");
@@ -100,6 +108,7 @@ class AdminController extends Controller
             'in_game_name'            => 'nullable|string|max:100',
             'is_admin'                => 'nullable|boolean',
             'is_supervisor'           => 'nullable|boolean',
+            'is_hr'                   => 'nullable|boolean',
             'department_id'           => 'nullable|exists:departments,id',
             'department_ids'          => 'nullable|array',
             'department_ids.*'        => 'exists:departments,id',
@@ -110,49 +119,40 @@ class AdminController extends Controller
             'notification_preference' => 'nullable|in:ALL,MESSAGES_ONLY',
         ]);
 
-        $oldRankId = $user->rank_id;
-        $oldDeptId = $user->department_id;
+        $oldRankId       = $user->rank_id;
+        $oldDeptId       = $user->department_id;
+        $oldDeptRankId   = $user->department_rank_id;
+        $oldIsLeader     = $user->is_department_leader;
+        $oldIsDeputy     = $user->is_department_deputy;
+        $oldIsAdmin      = $user->is_admin;
+        $oldIsSupervisor = $user->is_supervisor;
+        $oldIsHr         = $user->is_hr;
 
-        $newPassword   = $data['new_password'] ?? null;
-        $newDeptIds    = $data['department_ids'] ?? null;
+        $newPassword = $data['new_password'] ?? null;
+        $newDeptIds  = $data['department_ids'] ?? null;
         unset($data['new_password'], $data['department_ids']);
 
-        $user->update(array_filter($data, fn($v) => $v !== null));
+        // Checkboxes are always explicit (unchecked = absent from the request = false) —
+        // unlike the other nullable fields below, where null means "leave unchanged".
+        $booleanFields = ['is_admin', 'is_supervisor', 'is_hr', 'is_department_leader', 'is_department_deputy'];
+        $updateData    = array_filter($data, fn($v) => $v !== null);
+        foreach ($booleanFields as $field) {
+            $updateData[$field] = !empty($data[$field]);
+        }
+
+        $user->update($updateData);
 
         if ($newPassword) {
             $user->update(['password' => $newPassword]);
         }
 
-        // Sync many-to-many department memberships and their conversations
-        if ($newDeptIds !== null) {
-            $oldDeptPivotIds = $user->departments()->pluck('departments.id')->toArray();
-            $user->departments()->sync($newDeptIds);
+        // Collect exactly what changed so the notification only ever mentions the
+        // delta, never a dump of the whole profile.
+        $changes = [];
 
-            // Add user to newly joined dept conversations
-            $added   = array_diff($newDeptIds, $oldDeptPivotIds);
-            $removed = array_diff($oldDeptPivotIds, $newDeptIds);
-
-            foreach (Department::whereIn('id', $added)->get() as $dept) {
-                $conv = $dept->syncConversation();
-                $conv->participants()->syncWithoutDetaching([$user->id]);
-            }
-            foreach (Department::whereIn('id', $removed)->get() as $dept) {
-                if ($conv = $dept->officialConversation) {
-                    $conv->participants()->detach($user->id);
-                }
-            }
-        }
-
-        // Only notify when the value actually changed (cast both sides — form sends strings, DB returns ints)
         if (!empty($data['rank_id']) && (int)$data['rank_id'] !== (int)$oldRankId) {
-            $rankName = Rank::find($data['rank_id'])?->name ?? 'ismeretlen';
-            $msg = "Rangod megváltozott: {$rankName}";
-            if ($user->wantsNotification('general')) {
-                Notification::create(['user_id' => $user->id, 'message' => $msg]);
-            }
-            if ($user->discord_id) {
-                app(DiscordService::class)->sendDm($user->discord_id, "🎖️ Faction értesítő: {$msg}");
-            }
+            $rankName  = Rank::find($data['rank_id'])?->name ?? 'ismeretlen';
+            $changes[] = "Rangod: {$rankName}";
 
             // Sync rank-based conversation membership
             if ($oldRankId) {
@@ -163,13 +163,57 @@ class AdminController extends Controller
             if ($newConv) $newConv->participants()->syncWithoutDetaching([$user->id]);
         }
         if (!empty($data['department_id']) && (int)$data['department_id'] !== (int)$oldDeptId) {
-            $deptName = Department::find($data['department_id'])?->name ?? 'ismeretlen';
-            $msg = "Elsődleges alosztályod megváltozott: {$deptName}";
+            $deptName  = Department::find($data['department_id'])?->name ?? 'ismeretlen';
+            $changes[] = "Elsődleges alosztályod: {$deptName}";
+        }
+        if (!empty($data['department_rank_id']) && (int)$data['department_rank_id'] !== (int)$oldDeptRankId) {
+            $drName    = DepartmentRank::find($data['department_rank_id'])?->name ?? 'ismeretlen';
+            $changes[] = "Alosztályon belüli rangod: {$drName}";
+        }
+        if ($updateData['is_department_leader'] !== (bool)$oldIsLeader) {
+            $changes[] = $updateData['is_department_leader'] ? 'Alosztályvezető lettél' : 'Már nem vagy alosztályvezető';
+        }
+        if ($updateData['is_department_deputy'] !== (bool)$oldIsDeputy) {
+            $changes[] = $updateData['is_department_deputy'] ? 'Helyettes vezető lettél' : 'Már nem vagy helyettes vezető';
+        }
+        if ($updateData['is_admin'] !== (bool)$oldIsAdmin) {
+            $changes[] = $updateData['is_admin'] ? 'Admin jogot kaptál' : 'Admin jogod visszavonva';
+        }
+        if ($updateData['is_supervisor'] !== (bool)$oldIsSupervisor) {
+            $changes[] = $updateData['is_supervisor'] ? 'Szupervízor jogot kaptál' : 'Szupervízor jogod visszavonva';
+        }
+        if ($updateData['is_hr'] !== (bool)$oldIsHr) {
+            $changes[] = $updateData['is_hr'] ? 'HR jogot kaptál' : 'HR jogod visszavonva';
+        }
+
+        // Sync many-to-many department memberships and their conversations
+        if ($newDeptIds !== null) {
+            $oldDeptPivotIds = $user->departments()->pluck('departments.id')->toArray();
+            $user->departments()->sync($newDeptIds);
+
+            $added   = array_diff($newDeptIds, $oldDeptPivotIds);
+            $removed = array_diff($oldDeptPivotIds, $newDeptIds);
+
+            foreach (Department::whereIn('id', $added)->get() as $dept) {
+                $conv = $dept->syncConversation();
+                $conv->participants()->syncWithoutDetaching([$user->id]);
+                $changes[] = "Csatlakoztál: {$dept->name}";
+            }
+            foreach (Department::whereIn('id', $removed)->get() as $dept) {
+                if ($conv = $dept->officialConversation) {
+                    $conv->participants()->detach($user->id);
+                }
+                $changes[] = "Kikerültél: {$dept->name}";
+            }
+        }
+
+        if (!empty($changes)) {
+            $msg = implode("\n", array_map(fn($c) => "• {$c}", $changes));
             if ($user->wantsNotification('general')) {
                 Notification::create(['user_id' => $user->id, 'message' => $msg]);
             }
             if ($user->discord_id) {
-                app(DiscordService::class)->sendDm($user->discord_id, "🏢 Faction értesítő: {$msg}");
+                app(DiscordService::class)->sendDm($user->discord_id, "🔔 Fiókod frissült:\n{$msg}");
             }
         }
 
@@ -294,17 +338,114 @@ class AdminController extends Controller
         return $this->adminTab('messages', 'Beszélgetés törölve.');
     }
 
+    public function approveJoinRequest($id)
+    {
+        $application = FactionApplication::where('status', 'PENDING')->findOrFail($id);
+        $application->update(['status' => 'APPROVED', 'reviewed_by' => auth()->id(), 'reviewed_at' => now()]);
+
+        $this->notifyApplicant($application, 'Jelentkezésed elfogadva! Add meg mikor érnél rá egy rövid interjúra a Jelentkezéseim oldalon.');
+
+        return $this->adminTab('join-requests', 'Jelentkezés elfogadva.');
+    }
+
+    public function rejectJoinRequest($id)
+    {
+        $application = FactionApplication::whereIn('status', ['PENDING', 'NEEDS_CHANGES'])->findOrFail($id);
+        $application->update(['status' => 'REJECTED', 'reviewed_by' => auth()->id(), 'reviewed_at' => now()]);
+
+        $this->notifyApplicant($application, 'Jelentkezésed elutasítva. Új jelentkezést nyújthatsz be a Jelentkezéseim oldalon.');
+
+        return $this->adminTab('join-requests', 'Jelentkezés elutasítva.');
+    }
+
+    public function needsChangesJoinRequest(Request $request, $id)
+    {
+        $application = FactionApplication::where('status', 'PENDING')->findOrFail($id);
+        $data = $request->validate([
+            'fields_needing_changes'   => 'required|array|min:1',
+            'fields_needing_changes.*' => 'integer|exists:application_form_fields,id',
+            'review_note'              => 'nullable|string|max:2000',
+        ]);
+
+        $application->update([
+            'status'                 => 'NEEDS_CHANGES',
+            'fields_needing_changes' => $data['fields_needing_changes'],
+            'review_note'            => $data['review_note'] ?? null,
+            'reviewed_by'            => auth()->id(),
+            'reviewed_at'            => now(),
+        ]);
+
+        $this->notifyApplicant($application, 'A jelentkezésed néhány részéhez módosítás szükséges. Nézd meg a Jelentkezéseim oldalon.');
+
+        return $this->adminTab('join-requests', 'Módosítás kérve a jelentkezőtől.');
+    }
+
+    private function notifyApplicant(FactionApplication $application, string $message): void
+    {
+        $applicant = $application->user;
+        Notification::create(['user_id' => $applicant->id, 'message' => $message]);
+
+        if ($applicant->discord_id) {
+            app(DiscordService::class)->sendDm($applicant->discord_id, "📋 Faction értesítő: {$message}");
+        }
+    }
+
     public function updateSettings(Request $request)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:100',
-            'header_text' => 'nullable|string|max:100',
-            'logo_url'    => 'nullable|string',
-            'favicon_url' => 'nullable|string',
+            'name'              => 'required|string|max:100',
+            'header_text'       => 'nullable|string|max:100',
+            'logo_url'          => 'nullable|string',
+            'favicon_url'       => 'nullable|string',
+            'hr_department_id'  => 'nullable|exists:departments,id',
         ]);
 
         FactionSetting::singleton()->update($data);
         return $this->adminTab('settings', 'Beállítások mentve.');
+    }
+
+    public function storeFormField(Request $request)
+    {
+        $data = $this->validateFormField($request);
+        ApplicationFormField::create($data);
+        return $this->adminTab('join-requests', 'Mező létrehozva.');
+    }
+
+    public function updateFormField(Request $request, $id)
+    {
+        $field = ApplicationFormField::findOrFail($id);
+        $field->update($this->validateFormField($request));
+        return $this->adminTab('join-requests', 'Mező frissítve.');
+    }
+
+    public function destroyFormField($id)
+    {
+        ApplicationFormField::findOrFail($id)->delete();
+        return $this->adminTab('join-requests', 'Mező törölve.');
+    }
+
+    private function validateFormField(Request $request): array
+    {
+        $data = $request->validate([
+            'label'       => 'required|string|max:150',
+            'type'        => 'required|in:text,textarea,select,checkbox',
+            'options'     => 'nullable|string',
+            'is_required' => 'nullable|boolean',
+            'sort_order'  => 'nullable|integer',
+        ]);
+
+        $options = null;
+        if ($data['type'] === 'select' && !empty($data['options'])) {
+            $options = array_values(array_filter(array_map('trim', explode("\n", $data['options']))));
+        }
+
+        return [
+            'label'       => $data['label'],
+            'type'        => $data['type'],
+            'options'     => $options,
+            'is_required' => !empty($data['is_required']),
+            'sort_order'  => $data['sort_order'] ?? 0,
+        ];
     }
 
     public function storeCategory(Request $request)
@@ -429,6 +570,109 @@ class AdminController extends Controller
             ->values();
 
         return response()->json($messages);
+    }
+
+    public function storeNavLink(Request $request)
+    {
+        $data = $request->validate([
+            'label'       => 'required|string|max:50',
+            'url'         => 'required|string|max:255',
+            'is_external' => 'nullable|boolean',
+            'sort_order'  => 'nullable|integer',
+        ]);
+        NavLink::create([
+            'label'       => $data['label'],
+            'url'         => $data['url'],
+            'is_external' => !empty($data['is_external']),
+            'sort_order'  => $data['sort_order'] ?? 0,
+        ]);
+        return $this->adminTab('page-builder', 'Navigációs link létrehozva.');
+    }
+
+    public function updateNavLink(Request $request, $id)
+    {
+        $link = NavLink::findOrFail($id);
+        $data = $request->validate([
+            'label'       => 'required|string|max:50',
+            'url'         => 'required|string|max:255',
+            'is_external' => 'nullable|boolean',
+            'sort_order'  => 'nullable|integer',
+        ]);
+        $link->update([
+            'label'       => $data['label'],
+            'url'         => $data['url'],
+            'is_external' => !empty($data['is_external']),
+            'sort_order'  => $data['sort_order'] ?? 0,
+        ]);
+        return $this->adminTab('page-builder', 'Navigációs link frissítve.');
+    }
+
+    public function destroyNavLink($id)
+    {
+        NavLink::findOrFail($id)->delete();
+        return $this->adminTab('page-builder', 'Navigációs link törölve.');
+    }
+
+    public function storePageSection(Request $request)
+    {
+        $type = $request->validate(['type' => 'required|in:banner,hero,richtext,steps'])['type'];
+        $data = $this->validatePageSection($request, $type);
+        $data['type'] = $type;
+        PageSection::create($data);
+        return $this->adminTab('page-builder', 'Szakasz létrehozva.');
+    }
+
+    public function updatePageSection(Request $request, $id)
+    {
+        $section = PageSection::findOrFail($id);
+        $data    = $this->validatePageSection($request, $section->type);
+        $section->update($data);
+        return $this->adminTab('page-builder', 'Szakasz frissítve.');
+    }
+
+    public function destroyPageSection($id)
+    {
+        PageSection::findOrFail($id)->delete();
+        return $this->adminTab('page-builder', 'Szakasz törölve.');
+    }
+
+    public function togglePageSection($id)
+    {
+        $section = PageSection::findOrFail($id);
+        $section->update(['is_visible' => !$section->is_visible]);
+        return $this->adminTab('page-builder', 'Szakasz láthatósága módosítva.');
+    }
+
+    private function validatePageSection(Request $request, string $type): array
+    {
+        $data = match ($type) {
+            'banner' => $request->validate([
+                'text'    => 'required|string|max:255',
+                'url'     => 'nullable|string|max:255',
+                'variant' => 'required|in:dark,light,accent',
+            ]),
+            'hero' => $request->validate([
+                'eyebrow'   => 'nullable|string|max:100',
+                'title'     => 'required|string|max:150',
+                'image_url' => 'nullable|string|max:2048',
+                'show_seal' => 'nullable|boolean',
+            ]),
+            'richtext' => array_merge(
+                ['heading' => $request->validate(['richtext_heading' => 'nullable|string|max:150'])['richtext_heading'] ?? null],
+                $request->validate(['body' => 'required|string|max:5000', 'show_seal' => 'nullable|boolean'])
+            ),
+            'steps' => array_merge(
+                ['heading' => $request->validate(['steps_heading' => 'required|string|max:150'])['steps_heading']],
+                $request->validate(['items' => 'required|array|max:6', 'items.*.title' => 'required|string|max:100', 'items.*.body' => 'required|string|max:500'])
+            ),
+            default => abort(422, 'Ismeretlen szakasz típus.'),
+        };
+
+        if (array_key_exists('show_seal', $data)) $data['show_seal'] = !empty($data['show_seal']);
+
+        $sortOrder = $request->validate(['sort_order' => 'nullable|integer'])['sort_order'] ?? 0;
+
+        return ['data' => $data, 'sort_order' => $sortOrder];
     }
 
     private function adminTab(string $tab, string $success = null, string $error = null)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FactionSetting;
+use App\Models\NavLink;
 use Illuminate\Support\Facades\Http;
 
 abstract class Controller
@@ -14,7 +15,10 @@ abstract class Controller
 
     protected function view(string $view, array $data = [])
     {
-        return view($view, array_merge(['settings' => $this->settings()], $data));
+        return view($view, array_merge([
+            'settings' => $this->settings(),
+            'navLinks' => NavLink::ordered()->get(),
+        ], $data));
     }
 
     protected function sendDiscordDm(string $discordId, string $message): void

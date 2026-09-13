@@ -9,7 +9,7 @@ class SettingsController extends Controller
 {
     public function show()
     {
-        return $this->view('settings-page');
+        return $this->view(auth()->user()->is_member ? 'settings-page' : 'guest-settings');
     }
 
     public function update(Request $request)

@@ -11,7 +11,7 @@ class FactionSetting extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = ['name', 'header_text', 'logo_url', 'favicon_url', 'events_content'];
+    protected $fillable = ['name', 'header_text', 'logo_url', 'favicon_url', 'events_content', 'hr_department_id'];
 
     public static function singleton(): self
     {
@@ -19,5 +19,10 @@ class FactionSetting extends Model
             'name'        => 'Faction',
             'header_text' => 'Dashboard',
         ]);
+    }
+
+    public function hrDepartment()
+    {
+        return $this->belongsTo(Department::class, 'hr_department_id');
     }
 }

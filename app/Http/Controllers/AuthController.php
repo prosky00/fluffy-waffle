@@ -11,7 +11,7 @@ class AuthController extends Controller
 {
     public function login()
     {
-        if (auth()->check()) return redirect('/');
+        if (auth()->check()) return redirect()->route('dashboard');
         return view('login');
     }
 
@@ -35,7 +35,7 @@ class AuthController extends Controller
         auth()->login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended('/');
+        return redirect()->intended(route('dashboard'));
     }
 
     public function logout(Request $request)
