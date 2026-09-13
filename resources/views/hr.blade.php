@@ -98,8 +98,20 @@
     @php
         $statusLabel = ['REJECTED' => 'Elutasítva', 'MEMBER' => 'Tag lett', 'APPROVED' => 'Elfogadva — időpontra vár'][$jr->status] ?? $jr->status;
         $statusBadge = ['REJECTED' => 'badge-red', 'MEMBER' => 'badge-green', 'APPROVED' => 'badge-yellow'][$jr->status] ?? 'badge-gray';
+        $answerPairs = $formFields->map(function ($f) use ($jr) {
+            $a = $jr->answers[$f->id] ?? null;
+            return ['label' => $f->label, 'value' => is_bool($a) ? ($a ? 'Igen' : 'Nem') : ($a ?: '—')];
+        })->values();
     @endphp
-    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer" onclick='openReviewedApp(@json([
+        "name"       => $jr->user->in_game_name ?? $jr->user->name,
+        "username"   => $jr->user->username,
+        "statusLabel"=> $statusLabel,
+        "reviewer"   => $jr->reviewer ? ($jr->reviewer->in_game_name ?? $jr->reviewer->name) : null,
+        "reviewedAt" => ($jr->reviewed_at ?? $jr->created_at)->format("Y. m. d. H:i"),
+        "reviewNote" => $jr->review_note,
+        "answers"    => $answerPairs,
+    ]))'>
         <div style="flex:1;min-width:0">
             <span style="color:var(--fg);font-weight:600;font-size:13px">{{ $jr->user->in_game_name ?? $jr->user->name }}</span>
             <span style="color:var(--fg-subtle);font-size:12px;margin-left:6px">{{ '@'.$jr->user->username }}</span>
@@ -257,6 +269,20 @@
     </div>
 </div>
 
+{{-- Reviewed application detail modal --}}
+<div class="modal-backdrop" id="reviewedAppModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('reviewedAppModal')">&times;</button>
+        <div class="modal-title" id="reviewedAppTitle"></div>
+        <div id="reviewedAppMeta" style="color:var(--fg-subtle);font-size:12px;margin-bottom:16px"></div>
+        <div id="reviewedAppNoteWrap" style="display:none;margin-bottom:16px">
+            <div class="form-label">Megjegyzés a jelentkezőnek</div>
+            <div id="reviewedAppNote" style="color:var(--fg-muted);font-size:13px;white-space:pre-wrap"></div>
+        </div>
+        <div id="reviewedAppAnswers" style="display:grid;gap:10px"></div>
+    </div>
+</div>
+
 {{-- Needs-changes modal --}}
 <div class="modal-backdrop" id="needsChangesModal">
     <div class="modal">
@@ -299,6 +325,30 @@ function openEditFormField(field) {
     document.getElementById('editFieldOrder').value = field.sort_order;
     toggleFieldOptions('edit');
     openModal('editFormFieldModal');
+}
+
+function openReviewedApp(data) {
+    document.getElementById('reviewedAppTitle').textContent = `${data.name} (@${data.username})`;
+    document.getElementById('reviewedAppMeta').textContent = data.reviewer
+        ? `${data.statusLabel} — ${data.reviewer} · ${data.reviewedAt}`
+        : `${data.statusLabel} · ${data.reviewedAt}`;
+
+    const noteWrap = document.getElementById('reviewedAppNoteWrap');
+    if (data.reviewNote) {
+        document.getElementById('reviewedAppNote').textContent = data.reviewNote;
+        noteWrap.style.display = '';
+    } else {
+        noteWrap.style.display = 'none';
+    }
+
+    document.getElementById('reviewedAppAnswers').innerHTML = data.answers.map(a => `
+        <div>
+            <div style="color:var(--fg-subtle);font-size:11px;text-transform:uppercase;letter-spacing:.03em">${escHtml(a.label)}</div>
+            <div style="color:var(--fg-muted);font-size:13px;line-height:1.5;white-space:pre-wrap">${escHtml(a.value)}</div>
+        </div>
+    `).join('');
+
+    openModal('reviewedAppModal');
 }
 
 function openNeedsChanges(applicationId, fieldLabelsById) {
