@@ -8,6 +8,7 @@ use App\Models\ChangelogEntry;
 use App\Models\Conversation;
 use App\Models\Department;
 use App\Models\DepartmentRank;
+use App\Models\DutyWeeklyEntry;
 use App\Models\FactionApplication;
 use App\Models\FactionSetting;
 use App\Models\Message;
@@ -50,10 +51,12 @@ class AdminController extends Controller
         $changelogEntries = ChangelogEntry::with('author')->latest()->get();
         $dutyMembers     = $user->is_admin ? User::where('is_member', true)->orderBy('name')->get() : collect();
         $dutyReportCounts = $user->is_admin
-            ? Report::selectRaw('author_id, count(*) as c')->groupBy('author_id')->pluck('c', 'author_id')
+            ? Report::where('created_at', '>=', now()->subDays(7))->selectRaw('author_id, count(*) as c')->groupBy('author_id')->pluck('c', 'author_id')
             : collect();
+        $dutyWeekStart   = DutyWeeklyEntry::currentWeekStart();
+        $dutyMinutes     = $user->is_admin ? DutyWeeklyEntry::where('week_start', $dutyWeekStart)->pluck('minutes', 'user_id') : collect();
 
-        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports', 'changelogEntries', 'dutyMembers', 'dutyReportCounts'));
+        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports', 'changelogEntries', 'dutyMembers', 'dutyReportCounts', 'dutyWeekStart', 'dutyMinutes'));
     }
 
     public function storeUser(Request $request)
@@ -260,17 +263,33 @@ class AdminController extends Controller
         return $this->adminTab('users', 'Felhasználó frissítve.');
     }
 
-    public function updateDutyMinutes(Request $request, $id)
+    public function updateDutyMinutes(Request $request)
     {
-        $user = User::findOrFail($id);
-        $data = $request->validate(['duty_minutes' => 'required|integer|min:0']);
+        $data = $request->validate([
+            'minutes'   => 'required|array',
+            'minutes.*' => 'nullable|integer|min:0',
+        ]);
 
-        if ((int)$data['duty_minutes'] !== $user->duty_minutes) {
-            $user->update($data);
-            $this->logAudit('⏱️ Szolgálati idő módosítva', [
+        $weekStart = DutyWeeklyEntry::currentWeekStart();
+        $existing  = DutyWeeklyEntry::where('week_start', $weekStart)->pluck('minutes', 'user_id');
+        $users     = User::whereIn('id', array_keys($data['minutes']))->pluck('in_game_name', 'id');
+
+        $changed = [];
+        foreach ($data['minutes'] as $userId => $minutes) {
+            $minutes = (int)$minutes;
+            if ($minutes === ($existing[$userId] ?? 0)) continue;
+
+            DutyWeeklyEntry::updateOrCreate(
+                ['user_id' => $userId, 'week_start' => $weekStart],
+                ['minutes' => $minutes]
+            );
+            $changed[] = ($users[$userId] ?? "#{$userId}") . ": {$minutes} perc";
+        }
+
+        if (!empty($changed)) {
+            $this->logAudit('⏱️ Szolgálati idő frissítve (' . now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('Y. m. d.') . '-i hét)', [
                 'Végrehajtotta' => $this->actorName(),
-                'Tag'           => $user->in_game_name ?? $user->name,
-                'Új érték'      => "{$data['duty_minutes']} perc",
+                'Módosítások'   => implode("\n", $changed),
             ]);
         }
 

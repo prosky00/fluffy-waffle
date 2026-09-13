@@ -5,7 +5,7 @@
 
 @if($minutesThreshold !== null || $requiredReports !== null)
 <p style="color:var(--fg-subtle);font-size:13px;margin-bottom:16px">
-    Extra fizetés feltétele:
+    Extra fizetés feltétele ezen a héten ({{ \Illuminate\Support\Carbon::parse($weekStart)->format('Y. m. d.') }}–):
     @if($minutesThreshold !== null) legalább <strong style="color:var(--fg-muted)">{{ $minutesThreshold }} perc</strong> szolgálati idő @endif
     @if($minutesThreshold !== null && $requiredReports !== null) és @endif
     @if($requiredReports !== null) legalább <strong style="color:var(--fg-muted)">{{ $requiredReports }} db</strong> jelentés @endif
@@ -28,8 +28,7 @@
                     <th>Alosztály</th>
                     <th>Csatlakozás dátuma</th>
                     <th style="text-align:center">Heti jelentések</th>
-                    <th style="text-align:center">Összes jelentés</th>
-                    <th style="text-align:center">Szolgálati idő</th>
+                    <th style="text-align:center">Szolgálati idő (e héten)</th>
                     <th style="text-align:center">Extra fizetés</th>
                     <th>Utolsó előléptetés</th>
                 </tr>
@@ -55,7 +54,6 @@
                             <span style="color:var(--fg-subtle)">0</span>
                         @endif
                     </td>
-                    <td style="text-align:center;color:var(--fg-subtle)">{{ $m['total_reports'] }}</td>
                     <td style="text-align:center">
                         <span style="font-weight:600;color:{{ $m['duty_ok'] ? '#34d399' : 'var(--destructive)' }}">{{ $m['duty_minutes'] }} perc</span>
                     </td>
@@ -74,7 +72,7 @@
 
                 @if($members->isEmpty())
                 <tr>
-                    <td colspan="10" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs aktív tag.</td>
+                    <td colspan="9" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs aktív tag.</td>
                 </tr>
                 @endif
             </tbody>

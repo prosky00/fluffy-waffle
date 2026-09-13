@@ -182,7 +182,7 @@ Route::middleware(['auth', 'suspended'])->group(function () {
             // reachable by admins and HR alike)
 
             // Duty time
-            Route::patch('/admin/users/{id}/duty-minutes', [AdminController::class, 'updateDutyMinutes'])->name('admin.duty-minutes');
+            Route::patch('/admin/duty-minutes', [AdminController::class, 'updateDutyMinutes'])->name('admin.duty-minutes');
             Route::patch('/admin/duty-requirements', [AdminController::class, 'updateDutyRequirements'])->name('admin.duty-requirements');
 
             // Settings

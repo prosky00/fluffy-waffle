@@ -834,55 +834,62 @@
 <div id="panel-duty" class="admin-panel">
 <div class="card" style="margin-bottom:16px">
     <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:8px">Extra fizetés követelmények</div>
-    <p style="color:var(--fg-subtle);font-size:13px;margin-bottom:14px">Egy tag akkor jogosult extra fizetésre, ha mindkét feltételt teljesíti. Üresen hagyva az adott feltétel nem számít.</p>
+    <p style="color:var(--fg-subtle);font-size:13px;margin-bottom:14px">Egy tag akkor jogosult extra fizetésre, ha a folyó héten mindkét feltételt teljesíti. Üresen hagyva az adott feltétel nem számít.</p>
     <form method="POST" action="{{ route('admin.duty-requirements') }}" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
         @csrf @method('PATCH')
         <div>
-            <label class="form-label">Szükséges szolgálati idő (perc)</label>
+            <label class="form-label">Szükséges szolgálati idő / hét (perc)</label>
             <input type="number" name="duty_minutes_threshold" class="form-input" min="0" value="{{ $factionSettings->duty_minutes_threshold }}">
         </div>
         <div>
-            <label class="form-label">Szükséges jelentések száma</label>
+            <label class="form-label">Szükséges jelentések / hét</label>
             <input type="number" name="required_reports_count" class="form-input" min="0" value="{{ $factionSettings->required_reports_count }}">
         </div>
         <button type="submit" class="btn btn-primary">Mentés</button>
     </form>
 </div>
 
-<div style="margin-bottom:12px">
-    <input type="text" id="dutySearch" class="form-input" placeholder="Keresés karakter név szerint..." oninput="filterDuty()">
+<div style="margin-bottom:12px;display:flex;align-items:center;gap:16px">
+    <span style="color:var(--fg-subtle);font-size:13px;white-space:nowrap">Folyó hét: {{ \Illuminate\Support\Carbon::parse($dutyWeekStart)->format('Y. m. d.') }} –</span>
+    <input type="text" id="dutySearch" class="form-input" placeholder="Keresés karakter név szerint..." oninput="filterDuty()" style="max-width:320px">
 </div>
 
-<div class="card" style="padding:0;overflow:hidden">
-<div style="overflow-x:auto">
-<table class="table">
-    <thead><tr>
-        <th>Tag</th>
-        <th style="text-align:center">Összes jelentés</th>
-        <th style="text-align:center">Szolgálati idő (perc)</th>
-    </tr></thead>
-    <tbody>
-    @foreach($dutyMembers as $dm)
-    <tr class="duty-row" data-search="{{ strtolower($dm->in_game_name ?? $dm->name) }}">
-        <td style="color:var(--fg);font-weight:500">{{ $dm->in_game_name ?? $dm->name }}</td>
-        <td style="text-align:center;color:var(--fg-subtle)">{{ $dutyReportCounts[$dm->id] ?? 0 }}</td>
-        <td style="text-align:center">
-            <form method="POST" action="{{ route('admin.duty-minutes', $dm->id) }}" style="display:flex;gap:8px;justify-content:center;align-items:center">
-                @csrf @method('PATCH')
-                <input type="number" name="duty_minutes" class="form-input" min="0" value="{{ $dm->duty_minutes }}" style="max-width:120px">
-                <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:4px 10px">Mentés</button>
-            </form>
-        </td>
-    </tr>
-    @endforeach
+<form method="POST" action="{{ route('admin.duty-minutes') }}">
+    @csrf @method('PATCH')
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+    <div style="overflow-x:auto">
+    <table class="table">
+        <thead><tr>
+            <th>Tag</th>
+            <th style="text-align:center">Heti jelentések</th>
+            <th style="text-align:center">Szolgálati idő e héten (perc)</th>
+            <th style="text-align:right">Műveletek</th>
+        </tr></thead>
+        <tbody>
+        @foreach($dutyMembers as $dm)
+        <tr class="duty-row" data-search="{{ strtolower($dm->in_game_name ?? $dm->name) }}">
+            <td style="color:var(--fg);font-weight:500">{{ $dm->in_game_name ?? $dm->name }}</td>
+            <td style="text-align:center;color:var(--fg-subtle)">{{ $dutyReportCounts[$dm->id] ?? 0 }}</td>
+            <td style="text-align:center">
+                <input type="number" name="minutes[{{ $dm->id }}]" class="form-input" min="0" value="{{ $dutyMinutes[$dm->id] ?? 0 }}" style="max-width:140px;margin:0 auto">
+            </td>
+            <td style="text-align:right">
+                <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="submitSingleDuty({{ $dm->id }})">Mentés</button>
+            </td>
+        </tr>
+        @endforeach
 
-    @if($dutyMembers->isEmpty())
-    <tr><td colspan="3" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs tag.</td></tr>
+        @if($dutyMembers->isEmpty())
+        <tr><td colspan="4" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs tag.</td></tr>
+        @endif
+        </tbody>
+    </table>
+    </div>
+    </div>
+    @if($dutyMembers->isNotEmpty())
+    <button type="submit" class="btn btn-primary">Összes mentése</button>
     @endif
-    </tbody>
-</table>
-</div>
-</div>
+</form>
 </div>
 
 {{-- ════ MESSAGES ════ --}}
@@ -1306,6 +1313,22 @@ function filterDuty() {
     document.querySelectorAll('tr.duty-row').forEach(row => {
         row.style.display = (!q || (row.dataset.search || '').includes(q)) ? '' : 'none';
     });
+}
+
+// Saves just one member's duty minutes without submitting the whole table —
+// builds a one-off form on the fly since a <form> can't nest inside the bulk one.
+function submitSingleDuty(userId) {
+    const input = document.querySelector('input[name="minutes[' + userId + ']"]');
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route("admin.duty-minutes") }}';
+    form.innerHTML = `
+        <input type="hidden" name="_token" value="${_csrf}">
+        <input type="hidden" name="_method" value="PATCH">
+        <input type="hidden" name="minutes[${userId}]" value="${input.value}">
+    `;
+    document.body.appendChild(form);
+    form.submit();
 }
 
 function filterDeptRanks(userId) {

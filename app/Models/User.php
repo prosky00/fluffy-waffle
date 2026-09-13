@@ -16,7 +16,7 @@ class User extends Authenticatable
         'in_game_name', 'rank_id', 'department_id', 'department_rank_id',
         'is_department_leader', 'is_department_deputy',
         'rank_up_date', 'is_admin', 'is_supervisor', 'is_hr', 'is_member',
-        'last_active_at', 'notification_preference', 'duty_minutes',
+        'last_active_at', 'notification_preference',
     ];
 
     protected $hidden = ['remember_token', 'password'];
