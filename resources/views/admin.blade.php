@@ -1225,7 +1225,11 @@ function showPanel(name) {
     if (panel) panel.classList.add('active');
     document.querySelectorAll('.subnav-link[onclick="showPanel(\'' + name + '\')"]').forEach(b => b.classList.add('active'));
 
-    history.replaceState(null, '', '?tab=' + name);
+    // Only touch ?tab= — preserves other params already on the URL (e.g. the
+    // duty panel's ?week=), instead of overwriting the whole query string.
+    const _panelUrl = new URL(location.href);
+    _panelUrl.searchParams.set('tab', name);
+    history.replaceState(null, '', _panelUrl);
 
     // Lazy-init EasyMDE for announcements when that panel first becomes visible
     if (name === 'announcements' && !_annMde) {
