@@ -19,6 +19,20 @@ if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
     chown www-data:www-data "$DB_FILE" 2>/dev/null || true
 fi
 
+# ── Demo mode: auto-install with a known admin account instead of the wizard ──
+# Opt-in only (DEMO_SEED=true) — this creates a user with a published password,
+# so it must never be set on a real deployment. Safe to re-run on every boot:
+# migrate and the seeder's updateOrCreate are both idempotent.
+if [ "${DEMO_SEED:-false}" = "true" ] && [ ! -f "$INSTALLED_LOCK" ]; then
+    echo "==> DEMO_SEED enabled — auto-installing with a demo admin account (demo/demo12345)..."
+    if [ -z "$APP_KEY" ] || echo "$APP_KEY" | grep -qi "PLACEHOLDER\|CHANGE_ME"; then
+        php artisan key:generate --force 2>/dev/null || true
+    fi
+    php artisan migrate --force
+    php artisan db:seed --class="Database\\Seeders\\DemoSeeder" --force
+    date -u +%Y-%m-%dT%H:%M:%SZ > "$INSTALLED_LOCK"
+fi
+
 if [ -f "$INSTALLED_LOCK" ]; then
     # ── Already installed: run any pending migrations and warm caches ──────────
     echo "==> Already installed. Running pending migrations..."
