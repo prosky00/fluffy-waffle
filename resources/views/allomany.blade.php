@@ -1,7 +1,16 @@
 @extends('layouts.app')
 @section('title', 'Állomány')
 @section('content')
-<h1 style="color:var(--fg);font-size:24px;font-weight:700;margin-bottom:24px">Állomány</h1>
+<h1 style="color:var(--fg);font-size:24px;font-weight:700;margin-bottom:8px">Állomány</h1>
+
+@if($minutesThreshold !== null || $requiredReports !== null)
+<p style="color:var(--fg-subtle);font-size:13px;margin-bottom:16px">
+    Extra fizetés feltétele:
+    @if($minutesThreshold !== null) legalább <strong style="color:var(--fg-muted)">{{ $minutesThreshold }} perc</strong> szolgálati idő @endif
+    @if($minutesThreshold !== null && $requiredReports !== null) és @endif
+    @if($requiredReports !== null) legalább <strong style="color:var(--fg-muted)">{{ $requiredReports }} db</strong> jelentés @endif
+</p>
+@endif
 
 <div class="card" style="padding:0;overflow:hidden">
     <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px">
@@ -19,6 +28,9 @@
                     <th>Alosztály</th>
                     <th>Csatlakozás dátuma</th>
                     <th style="text-align:center">Heti jelentések</th>
+                    <th style="text-align:center">Összes jelentés</th>
+                    <th style="text-align:center">Szolgálati idő</th>
+                    <th style="text-align:center">Extra fizetés</th>
                     <th>Utolsó előléptetés</th>
                 </tr>
             </thead>
@@ -43,6 +55,17 @@
                             <span style="color:var(--fg-subtle)">0</span>
                         @endif
                     </td>
+                    <td style="text-align:center;color:var(--fg-subtle)">{{ $m['total_reports'] }}</td>
+                    <td style="text-align:center">
+                        <span style="font-weight:600;color:{{ $m['duty_ok'] ? '#34d399' : 'var(--destructive)' }}">{{ $m['duty_minutes'] }} perc</span>
+                    </td>
+                    <td style="text-align:center">
+                        @if($m['pay_eligible'])
+                            <span class="badge badge-green">Jogosult</span>
+                        @else
+                            <span class="badge badge-red">Nem jogosult</span>
+                        @endif
+                    </td>
                     <td>
                         {{ $m['last_rankup'] ? $m['last_rankup']->format('Y. m. d.') : '—' }}
                     </td>
@@ -51,7 +74,7 @@
 
                 @if($members->isEmpty())
                 <tr>
-                    <td colspan="7" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs aktív tag.</td>
+                    <td colspan="10" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs aktív tag.</td>
                 </tr>
                 @endif
             </tbody>

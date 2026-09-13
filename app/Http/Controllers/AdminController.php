@@ -48,8 +48,12 @@ class AdminController extends Controller
         $categories      = ReportCategory::orderBy('sort_order')->get();
         $allReports      = Report::with('author')->latest()->get();
         $changelogEntries = ChangelogEntry::with('author')->latest()->get();
+        $dutyMembers     = $user->is_admin ? User::where('is_member', true)->orderBy('name')->get() : collect();
+        $dutyReportCounts = $user->is_admin
+            ? Report::selectRaw('author_id, count(*) as c')->groupBy('author_id')->pluck('c', 'author_id')
+            : collect();
 
-        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports', 'changelogEntries'));
+        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports', 'changelogEntries', 'dutyMembers', 'dutyReportCounts'));
     }
 
     public function storeUser(Request $request)
@@ -254,6 +258,40 @@ class AdminController extends Controller
         }
 
         return $this->adminTab('users', 'Felhasználó frissítve.');
+    }
+
+    public function updateDutyMinutes(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $data = $request->validate(['duty_minutes' => 'required|integer|min:0']);
+
+        if ((int)$data['duty_minutes'] !== $user->duty_minutes) {
+            $user->update($data);
+            $this->logAudit('⏱️ Szolgálati idő módosítva', [
+                'Végrehajtotta' => $this->actorName(),
+                'Tag'           => $user->in_game_name ?? $user->name,
+                'Új érték'      => "{$data['duty_minutes']} perc",
+            ]);
+        }
+
+        return $this->adminTab('duty', 'Szolgálati idő frissítve.');
+    }
+
+    public function updateDutyRequirements(Request $request)
+    {
+        $data = $request->validate([
+            'duty_minutes_threshold' => 'nullable|integer|min:0',
+            'required_reports_count' => 'nullable|integer|min:0',
+        ]);
+
+        FactionSetting::singleton()->update($data);
+        $this->logAudit('⚙️ Extra fizetés követelmények módosítva', [
+            'Végrehajtotta'          => $this->actorName(),
+            'Szolgálati idő küszöb' => $data['duty_minutes_threshold'] !== null ? "{$data['duty_minutes_threshold']} perc" : 'nincs',
+            'Szükséges jelentések'  => $data['required_reports_count'] ?? 'nincs',
+        ]);
+
+        return $this->adminTab('duty', 'Követelmények mentve.');
     }
 
     public function updateDepartment(Request $request, $id)

@@ -23,6 +23,10 @@
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
     Szinkron
 </button>
+<button class="subnav-link {{ $curTab==='duty' ? 'active' : '' }}" onclick="showPanel('duty')">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Szolgálat
+</button>
 @endif
 
 <span class="subnav-category">Tartalom</span>
@@ -826,6 +830,61 @@
 </div>
 </div>
 
+{{-- ════ DUTY TIME ════ --}}
+<div id="panel-duty" class="admin-panel">
+<div class="card" style="margin-bottom:16px">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:8px">Extra fizetés követelmények</div>
+    <p style="color:var(--fg-subtle);font-size:13px;margin-bottom:14px">Egy tag akkor jogosult extra fizetésre, ha mindkét feltételt teljesíti. Üresen hagyva az adott feltétel nem számít.</p>
+    <form method="POST" action="{{ route('admin.duty-requirements') }}" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+        @csrf @method('PATCH')
+        <div>
+            <label class="form-label">Szükséges szolgálati idő (perc)</label>
+            <input type="number" name="duty_minutes_threshold" class="form-input" min="0" value="{{ $factionSettings->duty_minutes_threshold }}">
+        </div>
+        <div>
+            <label class="form-label">Szükséges jelentések száma</label>
+            <input type="number" name="required_reports_count" class="form-input" min="0" value="{{ $factionSettings->required_reports_count }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Mentés</button>
+    </form>
+</div>
+
+<div style="margin-bottom:12px">
+    <input type="text" id="dutySearch" class="form-input" placeholder="Keresés karakter név szerint..." oninput="filterDuty()">
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+<div style="overflow-x:auto">
+<table class="table">
+    <thead><tr>
+        <th>Tag</th>
+        <th style="text-align:center">Összes jelentés</th>
+        <th style="text-align:center">Szolgálati idő (perc)</th>
+    </tr></thead>
+    <tbody>
+    @foreach($dutyMembers as $dm)
+    <tr class="duty-row" data-search="{{ strtolower($dm->in_game_name ?? $dm->name) }}">
+        <td style="color:var(--fg);font-weight:500">{{ $dm->in_game_name ?? $dm->name }}</td>
+        <td style="text-align:center;color:var(--fg-subtle)">{{ $dutyReportCounts[$dm->id] ?? 0 }}</td>
+        <td style="text-align:center">
+            <form method="POST" action="{{ route('admin.duty-minutes', $dm->id) }}" style="display:flex;gap:8px;justify-content:center;align-items:center">
+                @csrf @method('PATCH')
+                <input type="number" name="duty_minutes" class="form-input" min="0" value="{{ $dm->duty_minutes }}" style="max-width:120px">
+                <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:4px 10px">Mentés</button>
+            </form>
+        </td>
+    </tr>
+    @endforeach
+
+    @if($dutyMembers->isEmpty())
+    <tr><td colspan="3" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs tag.</td></tr>
+    @endif
+    </tbody>
+</table>
+</div>
+</div>
+</div>
+
 {{-- ════ MESSAGES ════ --}}
 <div id="panel-messages" class="admin-panel">
 <div class="card" style="padding:0;overflow:hidden">
@@ -1239,6 +1298,13 @@ function filterUsers() {
         row.style.display = matches ? '' : 'none';
         const next = row.nextElementSibling;
         if (next && next.id && next.id.startsWith('edit_row_') && !matches) next.style.display = 'none';
+    });
+}
+
+function filterDuty() {
+    const q = document.getElementById('dutySearch').value.toLowerCase().trim();
+    document.querySelectorAll('tr.duty-row').forEach(row => {
+        row.style.display = (!q || (row.dataset.search || '').includes(q)) ? '' : 'none';
     });
 }
 

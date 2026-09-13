@@ -181,6 +181,10 @@ Route::middleware(['auth', 'suspended'])->group(function () {
             // (Faction applications + form builder moved to the 'hr' middleware group above,
             // reachable by admins and HR alike)
 
+            // Duty time
+            Route::patch('/admin/users/{id}/duty-minutes', [AdminController::class, 'updateDutyMinutes'])->name('admin.duty-minutes');
+            Route::patch('/admin/duty-requirements', [AdminController::class, 'updateDutyRequirements'])->name('admin.duty-requirements');
+
             // Settings
             Route::patch('/admin/settings', [AdminController::class, 'updateSettings']);
             Route::patch('/admin/discord-settings', [AdminController::class, 'updateDiscordSettings'])->name('admin.discord-settings');

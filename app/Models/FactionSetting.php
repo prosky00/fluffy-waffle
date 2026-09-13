@@ -16,6 +16,7 @@ class FactionSetting extends Model
         'discord_announcement_channel_id', 'discord_reports_channel_id',
         'discord_applications_channel_id', 'discord_audit_channel_id', 'discord_member_role_id',
         'discord_admin_role_id', 'discord_guest_role_id',
+        'duty_minutes_threshold', 'required_reports_count',
     ];
 
     public static function singleton(): self
