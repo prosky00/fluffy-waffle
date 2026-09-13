@@ -22,6 +22,20 @@
     </form>
 </div>
 
+<div class="card" style="margin-bottom:16px">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:14px">Discord</div>
+    @if(auth()->user()->discord_id)
+        <p style="color:var(--fg-muted);font-size:14px;margin-bottom:14px">Discord fiókod csatolva van. Rangod, alosztályod és a becenevedet automatikusan szinkronizáljuk a szerveren.</p>
+        <form method="POST" action="{{ route('auth.discord.unlink') }}">
+            @csrf
+            <button type="submit" class="btn btn-ghost">Discord leválasztása</button>
+        </form>
+    @else
+        <p style="color:var(--fg-muted);font-size:14px;margin-bottom:14px">Csatold a Discord fiókod, hogy értesítéseket kapj, és automatikusan bekerülj a szerverre a megfelelő szerepkörrel.</p>
+        <a href="{{ route('auth.discord.link') }}" class="btn btn-discord">Discord csatolása</a>
+    @endif
+</div>
+
 <div class="card">
     <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:14px">Jelszó megváltoztatása</div>
     <form method="POST" action="/settings/password">
