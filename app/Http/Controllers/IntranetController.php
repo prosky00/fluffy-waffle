@@ -33,7 +33,8 @@ class IntranetController extends Controller
         $users = User::orderBy('name')->get(['id', 'name', 'in_game_name']);
         $ranks = Rank::orderBy('level', 'desc')->get();
         $departments = $this->visibleDepartments($user);
-        return $this->view('intranet', compact('conversations', 'users', 'ranks', 'departments', 'folder', 'folderCounts'));
+        $allDepartments = Department::orderBy('name')->get(['id', 'name', 'discord_role_id', 'discord_channel_id']);
+        return $this->view('intranet', compact('conversations', 'users', 'ranks', 'departments', 'allDepartments', 'folder', 'folderCounts'));
     }
 
     public function show(Request $request, $id)
@@ -59,8 +60,9 @@ class IntranetController extends Controller
         $users = User::orderBy('name')->get(['id', 'name', 'in_game_name']);
         $ranks = Rank::orderBy('level', 'desc')->get();
         $departments = $this->visibleDepartments($user);
+        $allDepartments = Department::orderBy('name')->get(['id', 'name', 'discord_role_id', 'discord_channel_id']);
 
-        return $this->view('intranet', compact('conversations', 'conversation', 'messages', 'users', 'ranks', 'departments', 'folder', 'folderCounts'));
+        return $this->view('intranet', compact('conversations', 'conversation', 'messages', 'users', 'ranks', 'departments', 'allDepartments', 'folder', 'folderCounts'));
     }
 
     public function toggleStar($id)

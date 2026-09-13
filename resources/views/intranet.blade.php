@@ -209,7 +209,7 @@
                 <label class="form-label">Alosztály / Csoport</label>
                 <select name="department_id" class="form-select" id="convDeptSelect" onchange="onDeptChange()">
                     <option value="">— Válassz alosztályt —</option>
-                    @foreach($departments as $dept)
+                    @foreach($allDepartments as $dept)
                     <option value="{{ $dept->id }}"
                             data-role="{{ $dept->discord_role_id }}"
                             data-channel="{{ $dept->discord_channel_id }}">
