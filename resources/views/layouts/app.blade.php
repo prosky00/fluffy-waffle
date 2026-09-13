@@ -550,6 +550,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         group.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         this.classList.add('active');
         group.querySelector('[data-panel="' + this.dataset.tab + '"]').classList.add('active');
+
+        // Keep ?tab= in the URL so a form submit inside this tab (which redirects
+        // back() using the Referer) lands back on the same tab, not the default one.
+        const url = new URL(location.href);
+        url.searchParams.set('tab', this.dataset.tab);
+        history.replaceState(null, '', url);
     });
 });
 // Restore active tab from ?tab= query param
