@@ -50,6 +50,23 @@ class DiscordService
         }
     }
 
+    /** Posts a "who changed what" entry to the admin audit channel. $fields is a
+     *  flat ['label' => value] map, always led by the actor ("Végrehajtotta"). */
+    public function logAudit(string $channelId, string $title, array $fields, int $color = 0x5865F2): bool
+    {
+        if (!$channelId) return false;
+        return $this->sendChannelMessage($channelId, '', [
+            'title'     => $title,
+            'fields'    => array_map(fn($label, $value) => [
+                'name'   => $label,
+                'value'  => (string)($value ?: '—'),
+                'inline' => false,
+            ], array_keys($fields), array_values($fields)),
+            'color'     => $color,
+            'timestamp' => now()->toIso8601String(),
+        ]);
+    }
+
     public function sendAnnouncement(string $channelId, string $title, string $description, string $authorName = '', string $mention = ''): bool
     {
         $embed = [

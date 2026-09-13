@@ -86,7 +86,17 @@ class AlosztalyomController extends Controller
 
         $target = User::findOrFail($userId);
         $data   = $request->validate(['department_rank_id' => 'nullable|exists:department_ranks,id']);
-        $target->update(['department_rank_id' => $data['department_rank_id']]);
+
+        if ((int)$data['department_rank_id'] !== (int)$target->department_rank_id) {
+            $newRankName = DepartmentRank::find($data['department_rank_id'])?->name;
+            $target->update(['department_rank_id' => $data['department_rank_id']]);
+            $this->logAudit('⭐ Előléptetés', [
+                'Végrehajtotta' => $user->in_game_name ?? $user->name,
+                'Tag'           => $target->in_game_name ?? $target->name,
+                'Új beosztás'   => $newRankName,
+            ]);
+        }
+
         return back()->with('success', 'Tag rangja frissítve.');
     }
 

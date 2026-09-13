@@ -229,6 +229,11 @@ class AdminController extends Controller
                     'timestamp'   => now()->toIso8601String(),
                 ]);
             }
+            $this->logAudit('👤 Profil módosítva', [
+                'Végrehajtotta' => auth()->user()->in_game_name ?? auth()->user()->name,
+                'Tag'           => $user->in_game_name ?? $user->name,
+                'Módosítások'   => implode("\n", $changes),
+            ]);
         }
 
         return $this->adminTab('users', 'Felhasználó frissítve.');
@@ -241,7 +246,21 @@ class AdminController extends Controller
             'discord_role_id'    => 'nullable|string|max:50',
             'discord_channel_id' => 'nullable|string|max:50',
         ]);
+
+        $changed = $data['discord_role_id'] !== $dept->discord_role_id
+            || $data['discord_channel_id'] !== $dept->discord_channel_id;
+
         $dept->update($data);
+
+        if ($changed) {
+            $this->logAudit('⚙️ Alosztály Discord-beállítás módosítva', [
+                'Végrehajtotta' => auth()->user()->in_game_name ?? auth()->user()->name,
+                'Alosztály'     => $dept->name,
+                'Role ID'       => $data['discord_role_id'],
+                'Csatorna ID'   => $data['discord_channel_id'],
+            ]);
+        }
+
         return $this->adminTab('departments', 'Alosztály frissítve.');
     }
 

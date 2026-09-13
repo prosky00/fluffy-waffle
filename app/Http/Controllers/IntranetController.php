@@ -226,10 +226,20 @@ class IntranetController extends Controller
     public function deleteMessage($id)
     {
         $user    = auth()->user();
-        $message = Message::findOrFail($id);
+        $message = Message::with('user')->findOrFail($id);
 
         if ($message->user_id !== $user->id && !$user->is_admin) {
             abort(403);
+        }
+
+        // Admin removing someone else's message is a moderation action worth a
+        // paper trail; deleting your own message is routine and not logged.
+        if ($message->user_id !== $user->id) {
+            $this->logAudit('🗑️ Intranet üzenet törölve', [
+                'Végrehajtotta' => $user->in_game_name ?? $user->name,
+                'Szerző'        => $message->user->in_game_name ?? $message->user->name,
+                'Üzenet'        => mb_substr($message->content, 0, 300),
+            ]);
         }
 
         $message->delete();
