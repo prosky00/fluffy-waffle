@@ -67,5 +67,5 @@ fi
 # ── Fix permissions one final time (volumes may reset ownership) ──────────────
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
-echo "==> Ready. Starting PHP-FPM..."
+echo "==> Ready. Starting: $*"
 exec "$@"
