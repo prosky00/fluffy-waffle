@@ -680,7 +680,24 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label class="form-label">Admin szerepkör</label>
+                <select name="discord_admin_role_id" class="form-select">
+                    <option value="">— Nincs —</option>
+                    @foreach($discordRoles as $role)
+                    @if($role['name'] !== '@everyone')
+                    <option value="{{ $role['id'] }}" {{ $settings->discord_admin_role_id === $role['id'] ? 'selected' : '' }}>{{ $role['name'] }}</option>
+                    @endif
+                    @endforeach
+                </select>
+                <span class="hint" style="display:block;font-size:11px;color:var(--fg-subtle);margin-top:4px">
+                    Automatikusan ki-/bekerül, ha valakinek megváltozik az admin joga a weboldalon.
+                </span>
+            </div>
         </div>
+        <span class="hint" style="display:block;font-size:11px;color:var(--fg-subtle);margin-bottom:12px">
+            A rang és alosztály Discord szerepkörök (lásd a Rangok / Alosztályok fülön) automatikusan szinkronizálódnak Discord-ra, ha valakinek megváltozik a rangja vagy alosztálya — csak akkor, ha a tag már csatolta a Discord fiókját.
+        </span>
         <button type="submit" class="btn btn-primary">Mentés</button>
     </form>
 </div>

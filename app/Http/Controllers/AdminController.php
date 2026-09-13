@@ -140,6 +140,7 @@ class AdminController extends Controller
 
         $oldRankId       = $user->rank_id;
         $oldDeptId       = $user->department_id;
+        $oldDeptPivotIds = $user->departments()->pluck('departments.id')->toArray();
         $oldDeptRankId   = $user->department_rank_id;
         $oldIsLeader     = $user->is_department_leader;
         $oldIsDeputy     = $user->is_department_deputy;
@@ -211,7 +212,6 @@ class AdminController extends Controller
 
         // Sync many-to-many department memberships and their conversations
         if ($newDeptIds !== null) {
-            $oldDeptPivotIds = $user->departments()->pluck('departments.id')->toArray();
             $user->departments()->sync($newDeptIds);
 
             $added   = array_diff($newDeptIds, $oldDeptPivotIds);
@@ -229,6 +229,8 @@ class AdminController extends Controller
                 $changes[] = "Kikerültél: {$dept->name}";
             }
         }
+
+        $this->syncDiscordRoles($user, $oldRankId, $oldDeptId, $oldDeptPivotIds, (bool)$oldIsAdmin);
 
         if (!empty($changes)) {
             $msg = implode("\n", array_map(fn($c) => "• {$c}", $changes));
@@ -500,6 +502,50 @@ class AdminController extends Controller
         return redirect()->route('hr.index', ['tab' => 'applications'])->with('success', 'Módosítás kérve a jelentkezőtől.');
     }
 
+    /** Pushes rank/department/admin changes made on the site out to the user's real
+     *  Discord roles. No-ops silently if they haven't linked a Discord account, if
+     *  nothing relevant changed, or if the corresponding role isn't configured. Note:
+     *  this only reacts to a user's own rank/department/admin changing — it does not
+     *  retroactively re-sync everyone if a rank's or department's discord_role_id
+     *  mapping itself is edited later. */
+    private function syncDiscordRoles(User $user, ?int $oldRankId, ?int $oldDeptId, array $oldDeptPivotIds, bool $oldIsAdmin): void
+    {
+        if (!$user->discord_id) return;
+        $discord = app(DiscordService::class);
+
+        if ((int)$user->rank_id !== (int)$oldRankId) {
+            if ($oldRankId && $roleId = Rank::find($oldRankId)?->discord_role_id) {
+                $discord->removeMemberRole($user->discord_id, $roleId);
+            }
+            if ($user->rank_id && $roleId = Rank::find($user->rank_id)?->discord_role_id) {
+                $discord->addMemberRole($user->discord_id, $roleId);
+            }
+        }
+
+        $oldDeptIds = array_unique(array_filter(array_merge($oldDeptPivotIds, [$oldDeptId])));
+        $newDeptIds = array_unique(array_filter(array_merge(
+            $user->departments()->pluck('departments.id')->toArray(),
+            [$user->department_id]
+        )));
+
+        $addedDepts   = array_diff($newDeptIds, $oldDeptIds);
+        $removedDepts = array_diff($oldDeptIds, $newDeptIds);
+
+        foreach (Department::whereIn('id', $addedDepts)->get() as $dept) {
+            $discord->addMemberRole($user->discord_id, $dept->discord_role_id);
+        }
+        foreach (Department::whereIn('id', $removedDepts)->get() as $dept) {
+            $discord->removeMemberRole($user->discord_id, $dept->discord_role_id);
+        }
+
+        if ($user->is_admin !== $oldIsAdmin) {
+            $adminRoleId = FactionSetting::singleton()->discord_admin_role_id;
+            $user->is_admin
+                ? $discord->addMemberRole($user->discord_id, $adminRoleId)
+                : $discord->removeMemberRole($user->discord_id, $adminRoleId);
+        }
+    }
+
     private function notifyApplicant(FactionApplication $application, string $message): void
     {
         $applicant = $application->user;
@@ -550,6 +596,7 @@ class AdminController extends Controller
             'discord_applications_channel_id' => 'nullable|string|max:50',
             'discord_audit_channel_id'        => 'nullable|string|max:50',
             'discord_member_role_id'          => 'nullable|string|max:50',
+            'discord_admin_role_id'           => 'nullable|string|max:50',
         ]);
         $settings = FactionSetting::singleton();
         $labels   = [
@@ -558,6 +605,7 @@ class AdminController extends Controller
             'discord_applications_channel_id' => 'Jelentkezések csatorna',
             'discord_audit_channel_id'        => 'Audit csatorna',
             'discord_member_role_id'          => 'Tag szerepkör',
+            'discord_admin_role_id'           => 'Admin szerepkör',
         ];
         $changes = [];
         foreach ($labels as $field => $label) {

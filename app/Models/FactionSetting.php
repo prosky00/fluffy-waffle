@@ -15,6 +15,7 @@ class FactionSetting extends Model
         'name', 'header_text', 'logo_url', 'favicon_url', 'events_content', 'hr_department_id',
         'discord_announcement_channel_id', 'discord_reports_channel_id',
         'discord_applications_channel_id', 'discord_audit_channel_id', 'discord_member_role_id',
+        'discord_admin_role_id',
     ];
 
     public static function singleton(): self

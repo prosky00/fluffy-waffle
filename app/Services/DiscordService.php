@@ -136,6 +136,32 @@ class DiscordService
         return [];
     }
 
+    /** Grants a guild role to a member. Requires the bot's own role to sit above
+     *  the target role in the server's role hierarchy, or Discord rejects it. */
+    public function addMemberRole(string $discordId, ?string $roleId): bool
+    {
+        if (!$this->token || !$this->guildId || !$roleId || !$discordId) return false;
+        try {
+            $r = Http::withHeaders(['Authorization' => "Bot {$this->token}"])
+                ->put("https://discord.com/api/v10/guilds/{$this->guildId}/members/{$discordId}/roles/{$roleId}");
+            return $r->successful();
+        } catch (\Exception) {
+            return false;
+        }
+    }
+
+    public function removeMemberRole(string $discordId, ?string $roleId): bool
+    {
+        if (!$this->token || !$this->guildId || !$roleId || !$discordId) return false;
+        try {
+            $r = Http::withHeaders(['Authorization' => "Bot {$this->token}"])
+                ->delete("https://discord.com/api/v10/guilds/{$this->guildId}/members/{$discordId}/roles/{$roleId}");
+            return $r->successful();
+        } catch (\Exception) {
+            return false;
+        }
+    }
+
     public function getGuildRoles(): array
     {
         if (!$this->token || !$this->guildId) return [];
