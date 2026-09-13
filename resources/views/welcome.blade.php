@@ -61,4 +61,11 @@
     <a href="{{ route('login') }}" class="btn btn-ghost">Bejelentkezés</a>
 </div>
 @endguest
+@auth
+@if(auth()->user()->is_member)
+<div class="page-content" style="text-align:center;padding-top:0">
+    <a href="{{ route('dashboard') }}" class="btn btn-primary">Vissza a Főoldalra</a>
+</div>
+@endif
+@endauth
 @endsection
