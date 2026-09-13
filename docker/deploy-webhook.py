@@ -9,6 +9,7 @@ import hmac
 import json
 import os
 import subprocess
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 SECRET = os.environ["WEBHOOK_SECRET"].encode()
@@ -25,29 +26,30 @@ class Handler(BaseHTTPRequestHandler):
         signature = self.headers.get("X-Hub-Signature-256", "")
         expected = "sha256=" + hmac.new(SECRET, body, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(signature, expected):
-            self.send_response(401)
-            self.end_headers()
-            self.wfile.write(b"bad signature")
+            self.respond(401, b"bad signature")
             return
 
         try:
             payload = json.loads(body)
         except ValueError:
-            self.send_response(400)
-            self.end_headers()
+            self.respond(400, b"bad payload")
             return
 
         ref = payload.get("ref", "")
         if ref != f"refs/heads/{BRANCH}":
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(f"ignored ref {ref}".encode())
+            self.respond(200, f"ignored ref {ref}".encode())
             return
 
-        self.send_response(202)
+        # Respond immediately and deploy in the background — GitHub's own webhook
+        # timeout is 10s, and a full docker compose build can easily run longer.
+        self.respond(202, b"deploying")
+        threading.Thread(target=self.deploy, daemon=True).start()
+
+    def respond(self, status, body):
+        self.send_response(status)
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(b"deploying")
-        self.deploy()
+        self.wfile.write(body)
 
     def deploy(self):
         print(f"==> Deploying: git pull + docker compose up -d --build in {REPO_DIR}")
