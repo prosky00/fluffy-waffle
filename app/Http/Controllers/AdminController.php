@@ -53,10 +53,16 @@ class AdminController extends Controller
         $dutyReportCounts = $user->is_admin
             ? Report::where('created_at', '>=', now()->subDays(7))->selectRaw('author_id, count(*) as c')->groupBy('author_id')->pluck('c', 'author_id')
             : collect();
-        $dutyWeekStart   = DutyWeeklyEntry::currentWeekStart();
+        $dutyWeekStart   = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)request('week'))
+            ? request('week')
+            : DutyWeeklyEntry::currentWeekStart();
         $dutyMinutes     = $user->is_admin ? DutyWeeklyEntry::where('week_start', $dutyWeekStart)->pluck('minutes', 'user_id') : collect();
+        $dutyWeeks       = $user->is_admin
+            ? DutyWeeklyEntry::select('week_start')->distinct()->pluck('week_start')
+                ->push(DutyWeeklyEntry::currentWeekStart())->unique()->sortDesc()->values()
+            : collect();
 
-        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports', 'changelogEntries', 'dutyMembers', 'dutyReportCounts', 'dutyWeekStart', 'dutyMinutes'));
+        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports', 'changelogEntries', 'dutyMembers', 'dutyReportCounts', 'dutyWeekStart', 'dutyMinutes', 'dutyWeeks'));
     }
 
     public function storeUser(Request $request)
@@ -266,11 +272,12 @@ class AdminController extends Controller
     public function updateDutyMinutes(Request $request)
     {
         $data = $request->validate([
-            'minutes'   => 'required|array',
-            'minutes.*' => 'nullable|integer|min:0',
+            'week_start' => 'nullable|date_format:Y-m-d',
+            'minutes'    => 'required|array',
+            'minutes.*'  => 'nullable|integer|min:0',
         ]);
 
-        $weekStart = DutyWeeklyEntry::currentWeekStart();
+        $weekStart = $data['week_start'] ?? DutyWeeklyEntry::currentWeekStart();
         $existing  = DutyWeeklyEntry::where('week_start', $weekStart)->pluck('minutes', 'user_id');
         $users     = User::whereIn('id', array_keys($data['minutes']))->pluck('in_game_name', 'id');
 
@@ -287,13 +294,13 @@ class AdminController extends Controller
         }
 
         if (!empty($changed)) {
-            $this->logAudit('⏱️ Szolgálati idő frissítve (' . now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('Y. m. d.') . '-i hét)', [
+            $this->logAudit('⏱️ Szolgálati idő frissítve (' . \Illuminate\Support\Carbon::parse($weekStart)->format('Y. m. d.') . '-i hét)', [
                 'Végrehajtotta' => $this->actorName(),
                 'Módosítások'   => implode("\n", $changed),
             ]);
         }
 
-        return $this->adminTab('duty', 'Szolgálati idő frissítve.');
+        return redirect(route('admin') . '?tab=duty&week=' . $weekStart)->with('success', 'Szolgálati idő frissítve.');
     }
 
     public function updateDutyRequirements(Request $request)

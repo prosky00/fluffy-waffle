@@ -849,13 +849,27 @@
     </form>
 </div>
 
-<div style="margin-bottom:12px;display:flex;align-items:center;gap:16px">
-    <span style="color:var(--fg-subtle);font-size:13px;white-space:nowrap">Folyó hét: {{ \Illuminate\Support\Carbon::parse($dutyWeekStart)->format('Y. m. d.') }} –</span>
-    <input type="text" id="dutySearch" class="form-input" placeholder="Keresés karakter név szerint..." oninput="filterDuty()" style="max-width:320px">
+@php $dutyIsCurrentWeek = $dutyWeekStart === \App\Models\DutyWeeklyEntry::currentWeekStart(); @endphp
+<div style="margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div>
+        <label class="form-label" style="margin-bottom:4px">Hét</label>
+        <select class="form-select" onchange="location.href='{{ route('admin') }}?tab=duty&week=' + this.value">
+            @foreach($dutyWeeks as $w)
+            <option value="{{ $w }}" {{ $w === $dutyWeekStart ? 'selected' : '' }}>
+                {{ \Illuminate\Support\Carbon::parse($w)->format('Y. m. d.') }} –{{ $w === \App\Models\DutyWeeklyEntry::currentWeekStart() ? ' (folyó hét)' : '' }}
+            </option>
+            @endforeach
+        </select>
+    </div>
+    <input type="text" id="dutySearch" class="form-input" placeholder="Keresés karakter név szerint..." oninput="filterDuty()" style="max-width:320px;align-self:end">
+    @if(!$dutyIsCurrentWeek)
+    <span class="badge badge-yellow" style="align-self:end;margin-bottom:9px">Korábbi hét megtekintése</span>
+    @endif
 </div>
 
 <form method="POST" action="{{ route('admin.duty-minutes') }}">
     @csrf @method('PATCH')
+    <input type="hidden" name="week_start" value="{{ $dutyWeekStart }}">
     <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
     <div style="overflow-x:auto">
     <table class="table">
@@ -1325,6 +1339,7 @@ function submitSingleDuty(userId) {
     form.innerHTML = `
         <input type="hidden" name="_token" value="${_csrf}">
         <input type="hidden" name="_method" value="PATCH">
+        <input type="hidden" name="week_start" value="{{ $dutyWeekStart }}">
         <input type="hidden" name="minutes[${userId}]" value="${input.value}">
     `;
     document.body.appendChild(form);
