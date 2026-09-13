@@ -102,6 +102,11 @@ class DiscordSyncController extends Controller
             }
         }
 
+        $this->logAudit('🔄 Discord szinkronizáció lefuttatva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Eredmény'      => "{$updated} frissítve, {$created} új tag, {$skipped} kihagyva",
+        ]);
+
         return back()->with('success', "Szinkronizálva: {$updated} frissítve, {$created} új tag, {$skipped} kihagyva (nem tag).");
     }
 }

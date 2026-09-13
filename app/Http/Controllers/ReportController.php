@@ -128,6 +128,12 @@ class ReportController extends Controller
         if (in_array($newStatus, ['APPROVED', 'REJECTED']) && $oldStatus !== $newStatus) {
             $label  = $newStatus === 'APPROVED' ? 'jóváhagyva' : 'elutasítva';
             $actor  = $user->in_game_name ?? $user->name;
+
+            $this->logAudit($newStatus === 'APPROVED' ? '✅ Jelentés jóváhagyva' : '❌ Jelentés elutasítva', [
+                'Végrehajtotta' => $actor,
+                'Jelentés'      => $report->title,
+                'Szerző'        => $report->author->in_game_name ?? $report->author->name,
+            ]);
             $suffix = ($newStatus === 'REJECTED' && !empty($data['admin_comment']))
                 ? " Ok: {$data['admin_comment']}" : '';
             $msg    = "\"{$report->title}\" jelentésedet {$actor} {$label}.{$suffix}";
@@ -159,7 +165,7 @@ class ReportController extends Controller
 
     public function destroy($id)
     {
-        $report = Report::findOrFail($id);
+        $report = Report::with('author')->findOrFail($id);
         $user   = auth()->user();
         $isAuthor = $report->author_id === $user->id;
 
@@ -168,7 +174,18 @@ class ReportController extends Controller
             abort(403);
         }
 
+        $title  = $report->title;
+        $author = $report->author->in_game_name ?? $report->author->name;
         $report->delete();
+
+        if (!$isAuthor) {
+            $this->logAudit('🗑️ Jelentés törölve (admin)', [
+                'Végrehajtotta' => $this->actorName(),
+                'Jelentés'      => $title,
+                'Szerző'        => $author,
+            ]);
+        }
+
         return redirect()->route('jelentesek')->with('success', 'Jelentés törölve.');
     }
 

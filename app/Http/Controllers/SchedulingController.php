@@ -42,6 +42,10 @@ class SchedulingController extends Controller
         $application->update(['status' => 'MEMBER']);
 
         $this->notify($application, 'Gratulálunk! Az interjú után a jelentkezésed elfogadva, mostantól elérheted a belső felületet.');
+        $this->logAudit('✅ Hozzáférés megadva (interjú után)', [
+            'Végrehajtotta' => $this->actorName(),
+            'Jelentkező'    => $application->user->in_game_name ?? $application->user->name,
+        ]);
 
         return back()->with('success', 'Hozzáférés megadva.');
     }
@@ -52,6 +56,10 @@ class SchedulingController extends Controller
         $application->update(['status' => 'REJECTED']);
 
         $this->notify($application, 'Az interjú után sajnos nem tudunk fiókot nyitni számodra. Új jelentkezést nyújthatsz be a Jelentkezéseim oldalon.');
+        $this->logAudit('❌ Jelentkezés elutasítva (interjú után)', [
+            'Végrehajtotta' => $this->actorName(),
+            'Jelentkező'    => $application->user->in_game_name ?? $application->user->name,
+        ]);
 
         return back()->with('success', 'Jelentkezés elutasítva.');
     }

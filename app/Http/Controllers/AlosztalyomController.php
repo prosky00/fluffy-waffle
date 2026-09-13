@@ -41,7 +41,12 @@ class AlosztalyomController extends Controller
         $deptId = $this->resolveDept($request, $user);
         $this->requireManage($user, $deptId);
 
-        Department::findOrFail($deptId)->update(['rules' => $request->input('rules')]);
+        $dept = Department::findOrFail($deptId);
+        $dept->update(['rules' => $request->input('rules')]);
+        $this->logAudit('📋 Alosztályi szabályzat módosítva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Alosztály'     => $dept->name,
+        ]);
         return back()->with('success', 'Szabályzat mentve.');
     }
 
@@ -53,6 +58,11 @@ class AlosztalyomController extends Controller
 
         $data = $request->validate(['name' => 'required|string|max:100', 'level' => 'required|integer']);
         DepartmentRank::create(['department_id' => $deptId, 'name' => $data['name'], 'level' => $data['level']]);
+        $this->logAudit('🎖️ Alosztályi rang létrehozva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Alosztály'     => Department::find($deptId)?->name,
+            'Rang'          => $data['name'],
+        ]);
         return back()->with('success', 'Rang hozzáadva.');
     }
 
@@ -65,6 +75,11 @@ class AlosztalyomController extends Controller
         $rank = DepartmentRank::where('department_id', $deptId)->findOrFail($rankId);
         $data = $request->validate(['name' => 'required|string|max:100', 'level' => 'required|integer']);
         $rank->update($data);
+        $this->logAudit('🎖️ Alosztályi rang módosítva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Alosztály'     => Department::find($deptId)?->name,
+            'Rang'          => $rank->name,
+        ]);
         return back()->with('success', 'Rang frissítve.');
     }
 
@@ -74,7 +89,14 @@ class AlosztalyomController extends Controller
         $deptId = $this->resolveDept(request(), $user);
         $this->requireManage($user, $deptId);
 
-        DepartmentRank::where('department_id', $deptId)->findOrFail($rankId)->delete();
+        $rank = DepartmentRank::where('department_id', $deptId)->findOrFail($rankId);
+        $name = $rank->name;
+        $rank->delete();
+        $this->logAudit('🗑️ Alosztályi rang törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Alosztály'     => Department::find($deptId)?->name,
+            'Rang'          => $name,
+        ]);
         return back()->with('success', 'Rang törölve.');
     }
 
@@ -91,7 +113,7 @@ class AlosztalyomController extends Controller
             $newRankName = DepartmentRank::find($data['department_rank_id'])?->name;
             $target->update(['department_rank_id' => $data['department_rank_id']]);
             $this->logAudit('⭐ Előléptetés', [
-                'Végrehajtotta' => $user->in_game_name ?? $user->name,
+                'Végrehajtotta' => $this->actorName(),
                 'Tag'           => $target->in_game_name ?? $target->name,
                 'Új beosztás'   => $newRankName,
             ]);

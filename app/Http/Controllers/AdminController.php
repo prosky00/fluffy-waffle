@@ -78,6 +78,11 @@ class AdminController extends Controller
             'is_member'     => !empty($data['is_member']),
         ]);
 
+        $this->logAudit('👤 Fiók létrehozva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Felhasználó'   => $data['username'],
+        ]);
+
         return $this->adminTab('users', "Fiók létrehozva. Felhasználónév: {$data['username']}");
     }
 
@@ -89,6 +94,10 @@ class AdminController extends Controller
         }
         $user->update(['is_suspended' => !$user->is_suspended]);
         $status = $user->is_suspended ? 'felfüggesztve' : 'aktiválva';
+        $this->logAudit($user->is_suspended ? '⛔ Felhasználó felfüggesztve' : '✅ Felhasználó aktiválva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Tag'           => $user->in_game_name ?? $user->name,
+        ]);
         return $this->adminTab('users', "Felhasználó {$status}.");
     }
 
@@ -98,7 +107,12 @@ class AdminController extends Controller
         if ($user->id === auth()->id()) {
             return $this->adminTab('users', null, 'Nem törölheted a saját fiókod.');
         }
+        $name = $user->in_game_name ?? $user->name;
         $user->delete();
+        $this->logAudit('🗑️ Fiók törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Tag'           => $name,
+        ]);
         return $this->adminTab('users', 'Felhasználó törölve.');
     }
 
@@ -230,7 +244,7 @@ class AdminController extends Controller
                 ]);
             }
             $this->logAudit('👤 Profil módosítva', [
-                'Végrehajtotta' => auth()->user()->in_game_name ?? auth()->user()->name,
+                'Végrehajtotta' => $this->actorName(),
                 'Tag'           => $user->in_game_name ?? $user->name,
                 'Módosítások'   => implode("\n", $changes),
             ]);
@@ -254,7 +268,7 @@ class AdminController extends Controller
 
         if ($changed) {
             $this->logAudit('⚙️ Alosztály Discord-beállítás módosítva', [
-                'Végrehajtotta' => auth()->user()->in_game_name ?? auth()->user()->name,
+                'Végrehajtotta' => $this->actorName(),
                 'Alosztály'     => $dept->name,
                 'Role ID'       => $data['discord_role_id'],
                 'Csatorna ID'   => $data['discord_channel_id'],
@@ -274,6 +288,10 @@ class AdminController extends Controller
         $dept = Department::create($data);
         // Auto-create a default "Alosztályvezető" rank for every new department
         DepartmentRank::create(['department_id' => $dept->id, 'name' => 'Alosztályvezető', 'level' => 1]);
+        $this->logAudit('🏢 Alosztály létrehozva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Alosztály'     => $dept->name,
+        ]);
         return $this->adminTab('departments', 'Alosztály létrehozva.');
     }
 
@@ -286,12 +304,24 @@ class AdminController extends Controller
             'max_members' => 'required|integer|min:0',
         ]);
         $dept->update($data);
+        $this->logAudit('🏢 Alosztály adatai módosítva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Alosztály'     => $dept->name,
+            'Rövidítés'     => $dept->short_name,
+            'Max. létszám'  => $dept->max_members,
+        ]);
         return $this->adminTab('departments', 'Alosztály frissítve.');
     }
 
     public function destroyDepartment($id)
     {
-        Department::findOrFail($id)->delete();
+        $dept = Department::findOrFail($id);
+        $name = $dept->name;
+        $dept->delete();
+        $this->logAudit('🗑️ Alosztály törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Alosztály'     => $name,
+        ]);
         return $this->adminTab('departments', 'Alosztály törölve.');
     }
 
@@ -305,6 +335,10 @@ class AdminController extends Controller
             'discord_role_id' => 'nullable|string',
         ]);
         Rank::create($data);
+        $this->logAudit('🎖️ Rang létrehozva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Rang'          => $data['name'],
+        ]);
         return $this->adminTab('ranks', 'Rang létrehozva.');
     }
 
@@ -325,7 +359,7 @@ class AdminController extends Controller
 
         if ($roleChanged) {
             $this->logAudit('⚙️ Rang Discord-beállítás módosítva', [
-                'Végrehajtotta' => auth()->user()->in_game_name ?? auth()->user()->name,
+                'Végrehajtotta' => $this->actorName(),
                 'Rang'          => $rank->name,
                 'Role ID'       => $data['discord_role_id'],
             ]);
@@ -336,7 +370,13 @@ class AdminController extends Controller
 
     public function deleteRank($id)
     {
-        Rank::findOrFail($id)->delete();
+        $rank = Rank::findOrFail($id);
+        $name = $rank->name;
+        $rank->delete();
+        $this->logAudit('🗑️ Rang törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Rang'          => $name,
+        ]);
         return $this->adminTab('ranks', 'Rang törölve.');
     }
 
@@ -362,24 +402,47 @@ class AdminController extends Controller
             app(DiscordService::class)->sendAnnouncement($channelId, $data['title'], strip_tags($data['content']), $factionName, $mention);
         }
 
+        $this->logAudit('📣 Felhívás közzétéve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Cím'           => $data['title'],
+        ]);
+
         return $this->adminTab('announcements', 'Felhívás közzétéve.');
     }
 
     public function deleteAnnouncement($id)
     {
-        Announcement::findOrFail($id)->delete();
+        $announcement = Announcement::findOrFail($id);
+        $title = $announcement->title;
+        $announcement->delete();
+        $this->logAudit('🗑️ Felhívás törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Cím'           => $title,
+        ]);
         return $this->adminTab('announcements', 'Felhívás törölve.');
     }
 
     public function deleteMessage($id)
     {
-        Message::findOrFail($id)->delete();
+        $message = Message::with('user')->findOrFail($id);
+        $author  = $message->user->in_game_name ?? $message->user->name;
+        $message->delete();
+        $this->logAudit('🗑️ Üzenet törölve (admin felület)', [
+            'Végrehajtotta' => $this->actorName(),
+            'Szerző'        => $author,
+        ]);
         return $this->adminTab('messages', 'Üzenet törölve.');
     }
 
     public function deleteConversation($id)
     {
-        Conversation::findOrFail($id)->delete();
+        $conversation = Conversation::findOrFail($id);
+        $name = $conversation->name ?: "#{$conversation->id}";
+        $conversation->delete();
+        $this->logAudit('🗑️ Beszélgetés törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Beszélgetés'   => $name,
+        ]);
         return $this->adminTab('messages', 'Beszélgetés törölve.');
     }
 
@@ -389,6 +452,10 @@ class AdminController extends Controller
         $application->update(['status' => 'APPROVED', 'reviewed_by' => auth()->id(), 'reviewed_at' => now()]);
 
         $this->notifyApplicant($application, 'Jelentkezésed elfogadva! Add meg mikor érnél rá egy rövid interjúra a Jelentkezéseim oldalon.');
+        $this->logAudit('✅ Jelentkezés elfogadva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Jelentkező'    => $application->user->in_game_name ?? $application->user->name,
+        ]);
 
         return redirect()->route('hr.index', ['tab' => 'applications'])->with('success', 'Jelentkezés elfogadva.');
     }
@@ -399,6 +466,10 @@ class AdminController extends Controller
         $application->update(['status' => 'REJECTED', 'reviewed_by' => auth()->id(), 'reviewed_at' => now()]);
 
         $this->notifyApplicant($application, 'Jelentkezésed elutasítva. Új jelentkezést nyújthatsz be a Jelentkezéseim oldalon.');
+        $this->logAudit('❌ Jelentkezés elutasítva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Jelentkező'    => $application->user->in_game_name ?? $application->user->name,
+        ]);
 
         return redirect()->route('hr.index', ['tab' => 'applications'])->with('success', 'Jelentkezés elutasítva.');
     }
@@ -421,6 +492,10 @@ class AdminController extends Controller
         ]);
 
         $this->notifyApplicant($application, 'A jelentkezésed néhány részéhez módosítás szükséges. Nézd meg a Jelentkezéseim oldalon.');
+        $this->logAudit('✏️ Jelentkezéshez módosítás kérve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Jelentkező'    => $application->user->in_game_name ?? $application->user->name,
+        ]);
 
         return redirect()->route('hr.index', ['tab' => 'applications'])->with('success', 'Módosítás kérve a jelentkezőtől.');
     }
@@ -450,7 +525,18 @@ class AdminController extends Controller
             'hr_department_id'  => 'nullable|exists:departments,id',
         ]);
 
-        FactionSetting::singleton()->update($data);
+        $settings = FactionSetting::singleton();
+        $changed  = collect($data)->filter(fn($v, $k) => $v !== $settings->$k)->keys();
+
+        $settings->update($data);
+
+        if ($changed->isNotEmpty()) {
+            $this->logAudit('⚙️ Frakció beállítások módosítva', [
+                'Végrehajtotta' => $this->actorName(),
+                'Módosított mezők' => $changed->implode(', '),
+            ]);
+        }
+
         return $this->adminTab('settings', 'Beállítások mentve.');
     }
 
@@ -482,7 +568,7 @@ class AdminController extends Controller
 
         if (!empty($changes)) {
             $this->logAudit('⚙️ Discord csatorna-beállítások módosítva', array_merge([
-                'Végrehajtotta' => auth()->user()->in_game_name ?? auth()->user()->name,
+                'Végrehajtotta' => $this->actorName(),
             ], $changes));
         }
 
@@ -493,6 +579,10 @@ class AdminController extends Controller
     {
         $data = $this->validateFormField($request);
         ApplicationFormField::create($data);
+        $this->logAudit('📝 Jelentkezési űrlap mező létrehozva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Mező'          => $data['label'],
+        ]);
         return redirect()->route('hr.index', ['tab' => 'form'])->with('success', 'Mező létrehozva.');
     }
 
@@ -500,12 +590,22 @@ class AdminController extends Controller
     {
         $field = ApplicationFormField::findOrFail($id);
         $field->update($this->validateFormField($request));
+        $this->logAudit('📝 Jelentkezési űrlap mező módosítva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Mező'          => $field->label,
+        ]);
         return redirect()->route('hr.index', ['tab' => 'form'])->with('success', 'Mező frissítve.');
     }
 
     public function destroyFormField($id)
     {
-        ApplicationFormField::findOrFail($id)->delete();
+        $field = ApplicationFormField::findOrFail($id);
+        $label = $field->label;
+        $field->delete();
+        $this->logAudit('🗑️ Jelentkezési űrlap mező törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Mező'          => $label,
+        ]);
         return redirect()->route('hr.index', ['tab' => 'form'])->with('success', 'Mező törölve.');
     }
 
@@ -542,6 +642,10 @@ class AdminController extends Controller
             'sort_order' => 'nullable|integer',
         ]);
         ReportCategory::create($data);
+        $this->logAudit('📁 Jelentés-kategória létrehozva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Kategória'     => $data['name'],
+        ]);
         return $this->adminTab('categories', 'Kategória létrehozva.');
     }
 
@@ -555,12 +659,22 @@ class AdminController extends Controller
             'sort_order' => 'nullable|integer',
         ]);
         $cat->update($data);
+        $this->logAudit('📁 Jelentés-kategória módosítva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Kategória'     => $cat->name,
+        ]);
         return $this->adminTab('categories', 'Kategória frissítve.');
     }
 
     public function destroyCategory($id)
     {
-        ReportCategory::findOrFail($id)->delete();
+        $cat  = ReportCategory::findOrFail($id);
+        $name = $cat->name;
+        $cat->delete();
+        $this->logAudit('🗑️ Jelentés-kategória törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Kategória'     => $name,
+        ]);
         return $this->adminTab('categories', 'Kategória törölve.');
     }
 
@@ -631,6 +745,12 @@ class AdminController extends Controller
         if (!$ok) {
             return redirect(route('admin') . '?tab=discord')->withErrors(['discord' => 'Discord hiba: sikertelen küldés.']);
         }
+
+        $this->logAudit('📨 Manuális Discord embed elküldve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Csatorna ID'   => $data['channel_id'],
+            'Cím'           => $data['title'] ?? null,
+        ]);
 
         return $this->adminTab('discord', $successMsg);
     }
@@ -716,6 +836,11 @@ class AdminController extends Controller
             'content' => $data['content'],
         ]);
 
+        $this->logAudit('📰 Változásnapló bejegyzés hozzáadva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Cím'           => $data['title'],
+        ]);
+
         return $this->adminTab('changelog', 'Változásnapló bejegyzés hozzáadva.');
     }
 
@@ -732,6 +857,10 @@ class AdminController extends Controller
             'url'         => $data['url'],
             'is_external' => !empty($data['is_external']),
             'sort_order'  => $data['sort_order'] ?? 0,
+        ]);
+        $this->logAudit('🔗 Navigációs link létrehozva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Link'          => "{$data['label']} → {$data['url']}",
         ]);
         return $this->adminTab('page-builder', 'Navigációs link létrehozva.');
     }
@@ -751,12 +880,22 @@ class AdminController extends Controller
             'is_external' => !empty($data['is_external']),
             'sort_order'  => $data['sort_order'] ?? 0,
         ]);
+        $this->logAudit('🔗 Navigációs link módosítva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Link'          => "{$data['label']} → {$data['url']}",
+        ]);
         return $this->adminTab('page-builder', 'Navigációs link frissítve.');
     }
 
     public function destroyNavLink($id)
     {
-        NavLink::findOrFail($id)->delete();
+        $link  = NavLink::findOrFail($id);
+        $label = $link->label;
+        $link->delete();
+        $this->logAudit('🗑️ Navigációs link törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Link'          => $label,
+        ]);
         return $this->adminTab('page-builder', 'Navigációs link törölve.');
     }
 
@@ -766,6 +905,10 @@ class AdminController extends Controller
         $data = $this->validatePageSection($request, $type);
         $data['type'] = $type;
         PageSection::create($data);
+        $this->logAudit('🧱 Weboldal szakasz létrehozva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Típus'         => $type,
+        ]);
         return $this->adminTab('page-builder', 'Szakasz létrehozva.');
     }
 
@@ -774,12 +917,22 @@ class AdminController extends Controller
         $section = PageSection::findOrFail($id);
         $data    = $this->validatePageSection($request, $section->type);
         $section->update($data);
+        $this->logAudit('🧱 Weboldal szakasz módosítva', [
+            'Végrehajtotta' => $this->actorName(),
+            'Típus'         => $section->type,
+        ]);
         return $this->adminTab('page-builder', 'Szakasz frissítve.');
     }
 
     public function destroyPageSection($id)
     {
-        PageSection::findOrFail($id)->delete();
+        $section = PageSection::findOrFail($id);
+        $type = $section->type;
+        $section->delete();
+        $this->logAudit('🗑️ Weboldal szakasz törölve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Típus'         => $type,
+        ]);
         return $this->adminTab('page-builder', 'Szakasz törölve.');
     }
 
@@ -787,6 +940,10 @@ class AdminController extends Controller
     {
         $section = PageSection::findOrFail($id);
         $section->update(['is_visible' => !$section->is_visible]);
+        $this->logAudit($section->is_visible ? '👁️ Weboldal szakasz megjelenítve' : '🙈 Weboldal szakasz elrejtve', [
+            'Végrehajtotta' => $this->actorName(),
+            'Típus'         => $section->type,
+        ]);
         return $this->adminTab('page-builder', 'Szakasz láthatósága módosítva.');
     }
 

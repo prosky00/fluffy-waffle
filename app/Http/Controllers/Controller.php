@@ -22,6 +22,12 @@ abstract class Controller
         }
     }
 
+    protected function actorName(): string
+    {
+        $u = auth()->user();
+        return $u->in_game_name ?? $u->name;
+    }
+
     protected function view(string $view, array $data = [])
     {
         return view($view, array_merge([
