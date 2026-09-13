@@ -52,7 +52,9 @@ class AuthController extends Controller
     {
         if (!auth()->check()) return redirect('/login');
         session(['discord_action' => 'link']);
-        return Socialite::driver('discord')->redirect();
+        // guilds.join lets the bot add the user to the faction's server automatically
+        // (via addGuildMember() in the callback below), on top of the normal identify.
+        return Socialite::driver('discord')->scopes(['identify', 'email', 'guilds.join'])->redirect();
     }
 
     public function callback(Request $request)
@@ -80,7 +82,11 @@ class AuthController extends Controller
                 'avatar'     => $discordUser->getAvatar() ?? auth()->user()->avatar,
             ]);
 
-            app(DiscordService::class)->pushUserState(auth()->user());
+            $discord = app(DiscordService::class);
+            // Must run before pushUserState(): role/nickname changes need the user
+            // to already be a guild member, or Discord returns "Unknown Member".
+            $discord->addGuildMember($discordUser->getId(), $discordUser->token);
+            $discord->pushUserState(auth()->user());
 
             return redirect('/profile')->with('success', 'Discord fiók sikeresen csatolva. Mostantól értesítéseket kapsz Discordon is.');
         }

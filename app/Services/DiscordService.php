@@ -139,6 +139,24 @@ class DiscordService
         return [];
     }
 
+    /** Adds a Discord user to the faction's guild using their own OAuth access
+     *  token (obtained with the guilds.join scope during account linking) — this
+     *  is what lets "connect Discord" also mean "join the server" instead of
+     *  requiring a separate invite link. A no-op (204) if they're already in. */
+    public function addGuildMember(string $discordId, string $userAccessToken): bool
+    {
+        if (!$this->token || !$this->guildId || !$discordId || !$userAccessToken) return false;
+        try {
+            $r = Http::withHeaders(['Authorization' => "Bot {$this->token}"])
+                ->put("https://discord.com/api/v10/guilds/{$this->guildId}/members/{$discordId}", [
+                    'access_token' => $userAccessToken,
+                ]);
+            return $r->successful();
+        } catch (\Exception) {
+            return false;
+        }
+    }
+
     /** Grants a guild role to a member. Requires the bot's own role to sit above
      *  the target role in the server's role hierarchy, or Discord rejects it. */
     public function addMemberRole(string $discordId, ?string $roleId): bool
