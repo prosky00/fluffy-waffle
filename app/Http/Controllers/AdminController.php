@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\ApplicationFormField;
+use App\Models\ChangelogEntry;
 use App\Models\Conversation;
 use App\Models\Department;
 use App\Models\DepartmentRank;
@@ -46,8 +47,9 @@ class AdminController extends Controller
         $discordRoles    = $user->is_admin ? $discord->getGuildRoles() : [];
         $categories      = ReportCategory::orderBy('sort_order')->get();
         $allReports      = Report::with('author')->latest()->get();
+        $changelogEntries = ChangelogEntry::with('author')->latest()->get();
 
-        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports'));
+        return $this->view('admin', compact('users', 'ranks', 'departments', 'announcements', 'conversations', 'navLinks', 'pageSections', 'factionSettings', 'discordChannels', 'discordRoles', 'categories', 'allReports', 'changelogEntries'));
     }
 
     public function storeUser(Request $request)
@@ -570,6 +572,47 @@ class AdminController extends Controller
             ->values();
 
         return response()->json($messages);
+    }
+
+    public function getAuditLog(Request $request)
+    {
+        $channelId = config('services.discord.audit_channel_id');
+        if (!$channelId) {
+            return response()->json(['error' => 'Nincs beállítva napló csatorna (DISCORD_AUDIT_CHANNEL_ID).'], 422);
+        }
+
+        $raw = app(DiscordService::class)->getChannelMessages($channelId, 50);
+        if (empty($raw) && !is_array($raw)) {
+            return response()->json(['error' => 'Hiba a Discord API-tól'], 422);
+        }
+
+        $entries = collect($raw)
+            ->map(fn($m) => [
+                'id'        => $m['id'],
+                'timestamp' => $m['timestamp'],
+                'author'    => $m['author']['username'] ?? 'Bot',
+                'content'   => $m['content'] ?? '',
+            ])
+            ->filter(fn($e) => $e['content'] !== '')
+            ->values();
+
+        return response()->json($entries);
+    }
+
+    public function storeChangelog(Request $request)
+    {
+        $data = $request->validate([
+            'title'   => 'required|string|max:255',
+            'content' => 'required|string',
+        ]);
+
+        ChangelogEntry::create([
+            'user_id' => auth()->id(),
+            'title'   => $data['title'],
+            'content' => $data['content'],
+        ]);
+
+        return $this->adminTab('changelog', 'Változásnapló bejegyzés hozzáadva.');
     }
 
     public function storeNavLink(Request $request)

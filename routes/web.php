@@ -23,6 +23,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\FactionApplicationController;
 use App\Http\Controllers\SchedulingController;
 use App\Http\Controllers\HrController;
+use App\Http\Controllers\ChangelogController;
 
 // Install wizard (accessible only when not yet installed — enforced by CheckInstalled middleware)
 Route::get('/install',  [InstallController::class, 'show'])->name('install');
@@ -125,6 +126,9 @@ Route::middleware(['auth', 'suspended'])->group(function () {
         // Események
         Route::get('/esemenyek', [EsemenyekController::class, 'index'])->name('esemenyek');
 
+        // Változásnapló
+        Route::get('/valtozasnaplo', [ChangelogController::class, 'index'])->name('changelog');
+
         // Supervisor+ routes (admin or supervisor)
         Route::middleware('supervisor')->group(function () {
             Route::post('/esemenyek', [EsemenyekController::class, 'update'])->name('esemenyek.update');
@@ -181,6 +185,10 @@ Route::middleware(['auth', 'suspended'])->group(function () {
             Route::post('/admin/sync', [DiscordSyncController::class, 'sync'])->name('admin.sync');
             Route::post('/admin/discord-embed', [AdminController::class, 'sendEmbed'])->name('admin.discord-embed');
             Route::get('/admin/discord-messages', [AdminController::class, 'getDiscordMessages'])->name('admin.discord-messages');
+            Route::get('/admin/audit-log', [AdminController::class, 'getAuditLog'])->name('admin.audit-log');
+
+            // Changelog
+            Route::post('/admin/changelog', [AdminController::class, 'storeChangelog'])->name('admin.changelog.store');
 
             // Departments (CRUD + Discord role/channel), all under the admin "Alosztályok" tab
             Route::post('/admin/departments', [AdminController::class, 'storeDepartment']);

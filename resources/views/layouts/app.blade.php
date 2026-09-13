@@ -8,6 +8,7 @@
     @if($settings->favicon_url)
         <link rel="icon" href="{{ $settings->favicon_url }}">
     @endif
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
     <style>
         :root {
             --bg:          oklch(0.145 0 0);
@@ -299,6 +300,10 @@
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Lekérdező
             </a>
+            <a href="{{ route('changelog') }}" class="nav-link {{ request()->is('valtozasnaplo*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Változásnapló
+            </a>
         </div>
 
         <div class="nav-group">
@@ -404,8 +409,29 @@
     @yield('content')
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script>
 const _csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+// Shared markdown-editor toolbar — every EasyMDE instance on the site uses this
+const MDE_TOOLBAR = ['bold', 'italic', 'heading', '|', 'link', 'image', 'code', '|', 'quote', 'unordered-list', '|', 'preview'];
+
+// EasyMDE hides the original <textarea> and never writes back into it, so a plain
+// form submit would send empty content. Every EasyMDE instance on the site must be
+// created through this helper so its value is kept in sync for native form submits.
+function createMde(opts) {
+    const mde = new EasyMDE(Object.assign({ spellChecker: false, status: false, toolbar: MDE_TOOLBAR }, opts));
+    mde.codemirror.on('change', () => { opts.element.value = mde.value(); });
+    return mde;
+}
+
+// Render any stored-as-markdown content into HTML — used by every page that displays
+// text authored through an EasyMDE field (announcements, rules, events, reports).
+document.querySelectorAll('.md-content').forEach(el => {
+    const raw = el.textContent.trim();
+    if (raw) el.innerHTML = marked.parse(raw);
+});
 
 document.addEventListener('click', function(e) {
     const menu = document.getElementById('userMenu');

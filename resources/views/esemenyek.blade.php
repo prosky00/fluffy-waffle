@@ -2,7 +2,6 @@
 @section('title', 'Események')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.css">
 <style>
 .event-card { border:1px solid var(--border); border-radius:10px; padding:18px; background:var(--surface); margin-bottom:16px; }
 .event-card:hover { border-color:var(--accent); }
@@ -238,15 +237,7 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.js"></script>
 <script>
-// Render markdown content
-document.querySelectorAll('.md-content').forEach(el => {
-    const raw = el.textContent.trim();
-    if (raw) el.innerHTML = marked.parse(raw);
-});
-
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -275,14 +266,12 @@ function openEdit(event) {
 let newMde, editMde;
 document.getElementById('newEventModal')?.addEventListener('click', e => {
     if (!newMde) {
-        newMde = new EasyMDE({ element: document.getElementById('newEventDesc'), spellChecker:false, status:false,
-            toolbar:['bold','italic','heading','|','quote','unordered-list','|','link','|','preview'] });
+        newMde = createMde({ element: document.getElementById('newEventDesc') });
     }
 }, { once: true });
 document.getElementById('editEventModal')?.addEventListener('click', e => {
     if (!editMde) {
-        editMde = new EasyMDE({ element: document.getElementById('editDesc'), spellChecker:false, status:false,
-            toolbar:['bold','italic','heading','|','quote','unordered-list','|','link','|','preview'] });
+        editMde = createMde({ element: document.getElementById('editDesc') });
     }
 }, { once: true });
 
@@ -290,8 +279,7 @@ document.getElementById('editEventModal')?.addEventListener('click', e => {
 let descMde;
 document.querySelector('[onclick="toggleDescEdit()"]')?.addEventListener('click', () => {
     if (!descMde) {
-        descMde = new EasyMDE({ element: document.getElementById('eventsContentMde'), spellChecker:false, status:false,
-            toolbar:['bold','italic','heading','|','quote','unordered-list','ordered-list','|','link','|','preview'] });
+        descMde = createMde({ element: document.getElementById('eventsContentMde') });
     }
 });
 </script>

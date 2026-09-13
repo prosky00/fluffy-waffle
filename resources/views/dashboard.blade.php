@@ -23,7 +23,19 @@
 }
 .ann-card:last-child { margin-bottom: 0; }
 .ann-header {
-    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+.ann-icon {
+    width: 38px; height: 38px; border-radius: var(--radius);
+    background: oklch(0.553 0.195 38.402 / 15%);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--accent);
+}
+.ann-meta-top {
+    display: flex; flex-direction: column; flex: 1; min-width: 0;
 }
 .ann-title {
     color: var(--fg); font-size: 15px; font-weight: 600;
@@ -37,6 +49,7 @@
 .ann-sep    { color: var(--fg-subtle); font-size: 12px; }
 .ann-body {
     color: var(--fg-muted); font-size: 14px; line-height: 1.65;
+    padding-left: 52px;
 }
 .ann-body p { margin-bottom: .5em; }
 .ann-body p:last-child { margin-bottom: 0; }
@@ -138,14 +151,19 @@
         @forelse($announcements as $ann)
         <div class="ann-card">
             <div class="ann-header">
-                <div class="ann-title">{{ $ann->title }}</div>
-                <div class="ann-byline">
-                    <span class="ann-author">{{ $ann->author->in_game_name ?? $ann->author->name }}</span>
-                    <span class="ann-sep">·</span>
-                    <span class="ann-date">{{ $ann->created_at->diffForHumans() }}</span>
+                <div class="ann-icon">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 9v6h3L18 20V4L6 9H3z"/></svg>
+                </div>
+                <div class="ann-meta-top">
+                    <div class="ann-title">{{ $ann->title }}</div>
+                    <div class="ann-byline">
+                        <span class="ann-author">{{ $ann->author->in_game_name ?? $ann->author->name }}</span>
+                        <span class="ann-sep">·</span>
+                        <span class="ann-date">{{ $ann->created_at->diffForHumans() }}</span>
+                    </div>
                 </div>
             </div>
-            <div class="ann-body">{!! $ann->content !!}</div>
+            <div class="ann-body md-content">{!! $ann->content !!}</div>
         </div>
         @empty
         <div class="ann-card">
