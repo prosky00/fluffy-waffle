@@ -2,7 +2,6 @@
 @section('title', $report->title)
 
 @push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.css">
 <style>
 .md-body h1,.md-body h2,.md-body h3{color:var(--fg);margin:12px 0 6px}
 .md-body p{margin-bottom:8px}
@@ -135,8 +134,6 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.js"></script>
 <script>
 // Render stored markdown as HTML
 const reportBody = document.getElementById('reportBody');
@@ -145,8 +142,7 @@ if (reportBody) reportBody.innerHTML = marked.parse(reportBody.textContent.trim(
 // EasyMDE for edit form (only if edit card is visible)
 const editEl = document.getElementById('editContent');
 if (editEl) {
-    new EasyMDE({ element: editEl, spellChecker:false, status:false,
-        toolbar:['bold','italic','heading','|','quote','unordered-list','ordered-list','|','link','|','preview'] });
+    createMde({ element: editEl });
 }
 
 function submitEdit(status) {

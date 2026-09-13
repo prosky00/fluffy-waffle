@@ -13,17 +13,26 @@ use Illuminate\Http\Request;
 
 class IntranetController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
-        $conversations = $this->userConversations($user);
+
+        if ($request->query('dept')) {
+            $conversation = Department::findOrFail($request->query('dept'))->syncConversation();
+            return redirect("/intranet/{$conversation->id}");
+        }
+
+        $folder = $request->query('folder', 'inbox');
+        $all = $this->userConversations($user);
+        $conversations = $this->filterByFolder($all, $user, $folder);
+        $folderCounts = $this->folderCounts($all, $user);
         $users = User::orderBy('name')->get(['id', 'name', 'in_game_name']);
         $ranks = Rank::orderBy('level', 'desc')->get();
         $departments = Department::orderBy('name')->get(['id', 'name', 'discord_role_id', 'discord_channel_id']);
-        return $this->view('intranet', compact('conversations', 'users', 'ranks', 'departments'));
+        return $this->view('intranet', compact('conversations', 'users', 'ranks', 'departments', 'folder', 'folderCounts'));
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $user = auth()->user();
         $conversation = Conversation::with(['participants', 'rank'])->findOrFail($id);
@@ -31,6 +40,7 @@ class IntranetController extends Controller
         $isMember = $conversation->participants->contains('id', $user->id);
         if (!$isMember && !$user->is_admin) {
             if (!$this->autoJoin($conversation, $user)) abort(403);
+            $conversation->load('participants');
         }
 
         $messages = Message::with('author')
@@ -38,12 +48,48 @@ class IntranetController extends Controller
             ->oldest()
             ->get();
 
-        $conversations = $this->userConversations($user);
+        $folder = $request->query('folder', 'inbox');
+        $all = $this->userConversations($user);
+        $conversations = $this->filterByFolder($all, $user, $folder);
+        $folderCounts = $this->folderCounts($all, $user);
         $users = User::orderBy('name')->get(['id', 'name', 'in_game_name']);
         $ranks = Rank::orderBy('level', 'desc')->get();
         $departments = Department::orderBy('name')->get(['id', 'name', 'discord_role_id', 'discord_channel_id']);
 
-        return $this->view('intranet', compact('conversations', 'conversation', 'messages', 'users', 'ranks', 'departments'));
+        return $this->view('intranet', compact('conversations', 'conversation', 'messages', 'users', 'ranks', 'departments', 'folder', 'folderCounts'));
+    }
+
+    public function toggleStar($id)
+    {
+        $user = auth()->user();
+        $conversation = Conversation::with('participants')->findOrFail($id);
+        if (!$conversation->participants->contains('id', $user->id)) {
+            if (!$this->autoJoin($conversation, $user)) abort(403);
+        }
+        $starred = (bool) ($conversation->participants->firstWhere('id', $user->id)?->pivot->starred ?? false);
+        $conversation->participants()->updateExistingPivot($user->id, ['starred' => !$starred]);
+        return back();
+    }
+
+    public function trashConversation($id)
+    {
+        $user = auth()->user();
+        $conversation = Conversation::with('participants')->findOrFail($id);
+        if (!$conversation->participants->contains('id', $user->id)) {
+            if (!$this->autoJoin($conversation, $user)) abort(403);
+        }
+        $conversation->participants()->updateExistingPivot($user->id, ['trashed_at' => now()]);
+        return redirect('/intranet');
+    }
+
+    public function restoreConversation($id)
+    {
+        $user = auth()->user();
+        $conversation = Conversation::with('participants')->findOrFail($id);
+        if ($conversation->participants->contains('id', $user->id)) {
+            $conversation->participants()->updateExistingPivot($user->id, ['trashed_at' => null]);
+        }
+        return redirect('/intranet?folder=trash');
     }
 
     public function pollMessages($id)
@@ -67,6 +113,7 @@ class IntranetController extends Controller
             'content'    => $m->content,
             'created_at' => $m->created_at->format('H:i'),
             'author'     => ['id' => $m->author->id, 'name' => $m->author->in_game_name ?? $m->author->name, 'avatar' => $m->author->avatar],
+            'to'         => $conversation->displayName($m->author),
         ]));
     }
 
@@ -74,6 +121,7 @@ class IntranetController extends Controller
     {
         $data = $request->validate([
             'type'            => 'required|in:DIRECT,GROUP,RANK',
+            'name'            => 'nullable|string|max:255',
             'department_id'   => 'nullable|exists:departments,id',
             'rank_id'         => 'nullable|exists:ranks,id',
             'participant_ids' => 'nullable|array',
@@ -88,6 +136,7 @@ class IntranetController extends Controller
 
         $conversation = Conversation::create([
             'type'    => $data['type'],
+            'name'    => $data['name'] ?? null,
             'rank_id' => $data['rank_id'] ?? null,
         ]);
 
@@ -154,6 +203,7 @@ class IntranetController extends Controller
                 'content'    => $message->content,
                 'created_at' => $message->created_at->format('H:i'),
                 'author'     => ['id' => $user->id, 'name' => $user->in_game_name ?? $user->name, 'avatar' => $user->avatar],
+                'to'         => $conversation->displayName($user),
             ]);
         }
 
@@ -192,6 +242,34 @@ class IntranetController extends Controller
             })
             ->latest()
             ->get();
+    }
+
+    /** Folder is per-user state (starred/trashed), read off the participant pivot. Auto-joined
+     *  conversations (dept/rank channels the user hasn't opened yet) have no pivot row yet — treat
+     *  those as plain inbox: not starred, not trashed. */
+    private function filterByFolder($conversations, User $user, string $folder)
+    {
+        return $conversations->filter(function ($conv) use ($user, $folder) {
+            $pivot   = $conv->participants->firstWhere('id', $user->id)?->pivot;
+            $trashed = $pivot && $pivot->trashed_at !== null;
+            $starred = $pivot && $pivot->starred;
+            return match ($folder) {
+                'trash'   => $trashed,
+                'starred' => $starred && !$trashed,
+                'sent'    => !$trashed && $conv->messages->first()?->user_id === $user->id,
+                default   => !$trashed,
+            };
+        })->values();
+    }
+
+    private function folderCounts($conversations, User $user): array
+    {
+        return [
+            'inbox'   => $this->filterByFolder($conversations, $user, 'inbox')->count(),
+            'starred' => $this->filterByFolder($conversations, $user, 'starred')->count(),
+            'sent'    => $this->filterByFolder($conversations, $user, 'sent')->count(),
+            'trash'   => $this->filterByFolder($conversations, $user, 'trash')->count(),
+        ];
     }
 
     private function autoJoin(Conversation $conversation, User $user): bool

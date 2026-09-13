@@ -31,9 +31,17 @@
     Felhívások
 </button>
 @if(auth()->user()->is_admin)
+<button class="subnav-link {{ $curTab==='changelog' ? 'active' : '' }}" onclick="showPanel('changelog')">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    Változásnapló
+</button>
 <button class="subnav-link {{ $curTab==='messages' ? 'active' : '' }}" onclick="showPanel('messages')">
     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
     Üzenetek
+</button>
+<button class="subnav-link {{ $curTab==='page-builder' ? 'active' : '' }}" onclick="showPanel('page-builder')">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+    Weboldal
 </button>
 @endif
 
@@ -59,11 +67,14 @@
     <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.001.022.015.04.032.05a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
     Discord
 </button>
+<button class="subnav-link {{ $curTab==='audit' ? 'active' : '' }}" onclick="showPanel('audit')">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Napló
+</button>
 @endif
 @endpush
 
 @push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.css">
 <style>
 .admin-panel { display:none; }
 .admin-panel.active { display:block; }
@@ -111,6 +122,7 @@
                 <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end;padding-bottom:4px">
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_supervisor" value="1"> Szupervisor</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_admin" value="1"> Admin</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-subtle)"><input type="checkbox" name="is_hr" value="1"> HR</label>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary" style="font-size:12px;padding:6px 14px">Fiók létrehozása</button>
@@ -158,7 +170,8 @@
         </td>
         <td>
             @if($u->is_admin)<span class="badge badge-red" style="font-size:10px;margin-right:3px">Admin</span>@endif
-            @if($u->is_supervisor)<span class="badge badge-purple" style="font-size:10px">Szupervisor</span>@endif
+            @if($u->is_supervisor)<span class="badge badge-purple" style="font-size:10px;margin-right:3px">Szupervisor</span>@endif
+            @if($u->is_hr)<span class="badge badge-yellow" style="font-size:10px">HR</span>@endif
         </td>
         <td style="text-align:right">
             <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="toggleUserEdit({{ $u->id }})">Szerkesztés</button>
@@ -227,6 +240,7 @@
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_department_deputy" value="1" {{ $u->is_department_deputy?'checked':'' }}> Helyettes</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_supervisor" value="1" {{ $u->is_supervisor?'checked':'' }}> Szupervisor</label>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_admin" value="1" {{ $u->is_admin?'checked':'' }}> Admin</label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--fg-muted)"><input type="checkbox" name="is_hr" value="1" {{ $u->is_hr?'checked':'' }}> HR</label>
                 </div>
 
                 <div style="display:flex;gap:8px">
@@ -449,6 +463,34 @@
 </div>
 </div>
 
+{{-- ════ CHANGELOG ════ --}}
+@if(auth()->user()->is_admin)
+<div id="panel-changelog" class="admin-panel">
+<div class="card" style="margin-bottom:16px">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;margin-bottom:16px">Új bejegyzés</div>
+    <form method="POST" action="{{ route('admin.changelog.store') }}" id="changelogForm">
+        @csrf
+        <div style="margin-bottom:12px"><label class="form-label">Cím</label><input type="text" name="title" class="form-input" required></div>
+        <div style="margin-bottom:12px">
+            <label class="form-label">Tartalom (Markdown támogatott)</label>
+            <textarea name="content" id="changelogContent" class="form-textarea" rows="8" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Közzététel</button>
+    </form>
+</div>
+<div class="card">
+    @forelse($changelogEntries as $entry)
+    <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="color:var(--fg);font-size:14px;font-weight:500">{{ $entry->title }}</div>
+        <div style="color:var(--fg-subtle);font-size:12px">{{ $entry->author->name ?? '—' }} · {{ $entry->created_at->diffForHumans() }}</div>
+    </div>
+    @empty
+    <p style="color:var(--fg-subtle);font-size:14px">Még nincsenek bejegyzések.</p>
+    @endforelse
+</div>
+</div>
+@endif
+
 {{-- ════ CATEGORIES ════ --}}
 @if(auth()->user()->is_admin)
 <div id="panel-categories" class="admin-panel">
@@ -552,6 +594,16 @@
                 <input type="text" name="favicon_url" class="form-input" value="{{ $factionSettings->favicon_url }}">
                 <div style="margin-top:6px"><label class="form-label">Feltöltés:</label><input type="file" accept="image/*" onchange="uploadFile(this, 'favicon_url')"></div>
             </div>
+            <div>
+                <label class="form-label">HR alosztály</label>
+                <select name="hr_department_id" class="form-select">
+                    <option value="">— Nincs —</option>
+                    @foreach($departments as $dept)
+                    <option value="{{ $dept->id }}" {{ $factionSettings->hr_department_id === $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                    @endforeach
+                </select>
+                <div style="color:var(--fg-subtle);font-size:11px;margin-top:4px">Ennek az alosztálynak a tagjai hozzáférnek a HR menühöz — ugyanúgy, mint az adminok és a "HR" jelölésű felhasználók (lásd Felhasználók fül).</div>
+            </div>
         </div>
         <button type="submit" class="btn btn-primary">Mentés</button>
     </form>
@@ -600,7 +652,7 @@
         </div>
         <div style="margin-bottom:14px"><label class="form-label">Szerző</label><input type="text" name="author_name" id="embedAuthor" class="form-input" maxlength="256" oninput="updatePreview()"></div>
         <div style="margin-bottom:14px"><label class="form-label">Cím</label><input type="text" name="title" id="embedTitle" class="form-input" maxlength="256" oninput="updatePreview()"></div>
-        <div style="margin-bottom:14px"><label class="form-label">Leírás</label><textarea name="description" id="embedDesc" class="form-textarea" rows="5" maxlength="4096" oninput="updatePreview()"></textarea></div>
+        <div style="margin-bottom:14px"><label class="form-label">Leírás</label><textarea name="description" id="embedDesc" class="form-textarea" rows="5" maxlength="4096"></textarea></div>
         <div style="margin-bottom:14px"><label class="form-label">Bélyegkép URL</label><input type="text" name="thumbnail_url" id="embedThumb" class="form-input" oninput="updatePreview()"></div>
         <div style="margin-bottom:14px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -636,6 +688,19 @@
         </div>
     </div>
 </div>
+</div>
+</div>
+
+{{-- ════ AUDIT LOG ════ --}}
+<div id="panel-audit" class="admin-panel">
+<div class="card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="color:var(--fg);font-size:15px;font-weight:600;flex:1">Napló</div>
+        <button type="button" class="btn btn-ghost" style="font-size:12px" onclick="loadAuditLog()">Frissítés</button>
+    </div>
+    <div id="auditLogList" style="display:flex;flex-direction:column;gap:10px">
+        <span style="color:var(--fg-subtle);font-size:13px">Betöltés...</span>
+    </div>
 </div>
 </div>
 
@@ -695,15 +760,180 @@
 </div>
 </div>
 
+{{-- ════ PAGE BUILDER ════ --}}
+<div id="panel-page-builder" class="admin-panel">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;flex:1">Navigáció</div>
+    <button class="btn btn-primary" style="white-space:nowrap" onclick="openModal('newNavModal')">+ Új link</button>
+</div>
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:24px">
+    <table class="table">
+        <thead><tr><th>Címke</th><th>URL</th><th>Külső</th><th>Sorrend</th><th style="text-align:right"></th></tr></thead>
+        <tbody>
+        @forelse($navLinks as $link)
+        <tr>
+            <td style="color:var(--fg)">{{ $link->label }}</td>
+            <td style="color:var(--fg-subtle)">{{ $link->url }}</td>
+            <td>{{ $link->is_external ? 'Igen' : 'Nem' }}</td>
+            <td>{{ $link->sort_order }}</td>
+            <td style="text-align:right;white-space:nowrap">
+                <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick="openEditNav({{ $link->id }}, '{{ addslashes($link->label) }}', '{{ addslashes($link->url) }}', {{ $link->is_external ? 'true' : 'false' }}, {{ $link->sort_order }})">Szerkesztés</button>
+                <form method="POST" action="/admin/nav-links/{{ $link->id }}" style="display:inline-block" onsubmit="return confirm('Törlöd ezt a linket?')">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn btn-danger" style="font-size:11px;padding:4px 8px">Törlés</button>
+                </form>
+            </td>
+        </tr>
+        @empty
+        <tr><td colspan="5" style="padding:24px;text-align:center;color:var(--fg-subtle)">Nincs navigációs link.</td></tr>
+        @endforelse
+        </tbody>
+    </table>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="color:var(--fg);font-size:15px;font-weight:600;flex:1">Főoldal szakaszok</div>
+    <button class="btn btn-primary" style="white-space:nowrap" onclick="openNewSection()">+ Új szakasz</button>
+</div>
+<div class="card" style="padding:0;overflow:hidden">
+    @forelse($pageSections as $section)
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+                <span class="badge badge-gray">{{ ['banner'=>'Sáv','hero'=>'Fejléc','richtext'=>'Szöveg','steps'=>'Lépések'][$section->type] ?? $section->type }}</span>
+                <span style="color:var(--fg);font-weight:500;font-size:13px">
+                    {{ $section->data['title'] ?? $section->data['heading'] ?? $section->data['text'] ?? '—' }}
+                </span>
+                @if(!$section->is_visible)<span class="badge badge-red">Rejtett</span>@endif
+            </div>
+            <div style="color:var(--fg-subtle);font-size:11px">Sorrend: {{ $section->sort_order }}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+            <form method="POST" action="/admin/page-sections/{{ $section->id }}/toggle">
+                @csrf
+                <button type="submit" class="btn btn-ghost" style="font-size:11px;padding:4px 8px">{{ $section->is_visible ? 'Elrejtés' : 'Megjelenítés' }}</button>
+            </form>
+            <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 8px" onclick='openEditSection(@json($section))'>Szerkesztés</button>
+            <form method="POST" action="/admin/page-sections/{{ $section->id }}" onsubmit="return confirm('Törlöd ezt a szakaszt?')">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn btn-danger" style="font-size:11px;padding:4px 8px">Törlés</button>
+            </form>
+        </div>
+    </div>
+    @empty
+    <p style="color:var(--fg-subtle);font-size:14px;padding:20px">Nincs szakasz — a főoldal üres lesz.</p>
+    @endforelse
+</div>
+</div>
+
+{{-- Nav link modals --}}
+<div class="modal-backdrop" id="newNavModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('newNavModal')">&times;</button>
+        <div class="modal-title">Új navigációs link</div>
+        <form method="POST" action="/admin/nav-links">
+            @csrf
+            <div style="margin-bottom:12px"><label class="form-label">Címke</label><input type="text" name="label" class="form-input" required></div>
+            <div style="margin-bottom:12px"><label class="form-label">URL</label><input type="text" name="url" class="form-input" placeholder="/jelentkezes vagy https://..." required></div>
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:6px"><input type="checkbox" name="is_external" value="1" id="newNavExternal"><label for="newNavExternal" style="color:var(--fg-subtle);font-size:13px">Külső link (új fülön nyílik)</label></div>
+            <div style="margin-bottom:16px"><label class="form-label">Sorrend</label><input type="number" name="sort_order" class="form-input" value="0"></div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn btn-primary">Létrehozás</button>
+                <button type="button" onclick="closeModal('newNavModal')" class="btn btn-ghost">Mégse</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-backdrop" id="editNavModal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal('editNavModal')">&times;</button>
+        <div class="modal-title">Link szerkesztése</div>
+        <form method="POST" id="editNavForm">
+            @csrf @method('PUT')
+            <div style="margin-bottom:12px"><label class="form-label">Címke</label><input type="text" name="label" id="editNavLabel" class="form-input" required></div>
+            <div style="margin-bottom:12px"><label class="form-label">URL</label><input type="text" name="url" id="editNavUrl" class="form-input" required></div>
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:6px"><input type="checkbox" name="is_external" value="1" id="editNavExternal"><label for="editNavExternal" style="color:var(--fg-subtle);font-size:13px">Külső link (új fülön nyílik)</label></div>
+            <div style="margin-bottom:16px"><label class="form-label">Sorrend</label><input type="number" name="sort_order" id="editNavOrder" class="form-input"></div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn btn-primary">Mentés</button>
+                <button type="button" onclick="closeModal('editNavModal')" class="btn btn-ghost">Mégse</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Page section modal (shared add/edit, fields toggle by type) --}}
+<div class="modal-backdrop" id="sectionModal">
+    <div class="modal" style="max-width:520px">
+        <button class="modal-close" onclick="closeModal('sectionModal')">&times;</button>
+        <div class="modal-title" id="sectionModalTitle">Új szakasz</div>
+        <form method="POST" id="sectionForm">
+            @csrf
+            <input type="hidden" name="_method" id="sectionMethod" value="POST">
+            <div style="margin-bottom:14px" id="sectionTypeField">
+                <label class="form-label">Típus</label>
+                <select id="sectionType" class="form-select" onchange="toggleSectionFields()">
+                    <option value="banner">Sáv (pl. figyelmeztetés)</option>
+                    <option value="hero">Fejléc (nagy piros sáv)</option>
+                    <option value="richtext">Szöveg (üdvözlő szöveg)</option>
+                    <option value="steps">Lépések (kártyák)</option>
+                </select>
+            </div>
+
+            <div id="fields-banner" style="display:none">
+                <div style="margin-bottom:12px"><label class="form-label">Szöveg</label><input type="text" name="text" class="form-input"></div>
+                <div style="margin-bottom:12px"><label class="form-label">Link (opcionális)</label><input type="text" name="url" class="form-input"></div>
+                <div style="margin-bottom:12px">
+                    <label class="form-label">Stílus</label>
+                    <select name="variant" class="form-select">
+                        <option value="dark">Sötét (fekete alapon fehér)</option>
+                        <option value="light">Világos (fehér alapon piros)</option>
+                        <option value="accent">Kiemelt (piros alapon fehér)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="fields-hero" style="display:none">
+                <div style="margin-bottom:12px"><label class="form-label">Előcím</label><input type="text" name="eyebrow" class="form-input" placeholder="ÜDVÖZLÜNK A"></div>
+                <div style="margin-bottom:12px"><label class="form-label">Cím</label><input type="text" name="title" class="form-input"></div>
+                <div style="margin-bottom:12px"><label class="form-label">Kép URL (opcionális)</label><input type="text" name="image_url" class="form-input"></div>
+            </div>
+
+            <div id="fields-richtext" style="display:none">
+                <div style="margin-bottom:12px"><label class="form-label">Cím (opcionális)</label><input type="text" name="richtext_heading" class="form-input"></div>
+                <div style="margin-bottom:12px"><label class="form-label">Szöveg</label><textarea name="body" class="form-textarea" rows="5"></textarea></div>
+                <div style="margin-bottom:12px;display:flex;align-items:center;gap:6px"><input type="checkbox" name="show_seal" value="1" id="sectionShowSeal"><label for="sectionShowSeal" style="color:var(--fg-subtle);font-size:13px">Embléma megjelenítése</label></div>
+            </div>
+
+            <div id="fields-steps" style="display:none">
+                <div style="margin-bottom:12px"><label class="form-label">Cím</label><input type="text" name="steps_heading" class="form-input"></div>
+                <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+                    <span class="form-label" style="margin:0">Lépések</span>
+                    <button type="button" onclick="addStepItem()" class="btn btn-ghost" style="font-size:11px;padding:3px 10px">+ Lépés</button>
+                </div>
+                <div id="stepsContainer"></div>
+            </div>
+
+            <div style="margin-bottom:16px;margin-top:14px"><label class="form-label">Sorrend</label><input type="number" name="sort_order" id="sectionOrder" class="form-input" value="0"></div>
+            <div style="display:flex;gap:8px">
+                <button type="submit" class="btn btn-primary">Mentés</button>
+                <button type="button" onclick="closeModal('sectionModal')" class="btn btn-ghost">Mégse</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
 @endif {{-- end admin-only panels --}}
 @endsection
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.js"></script>
 <script>
 // ── Panel switching ───────────────────────────────────────────────────────────
 const _defaultPanel = '{{ auth()->user()->is_admin ? "users" : "reports" }}';
 let _annMde = null;
+let _embedMde = null;
+let _changelogMde = null;
 
 function toggleConv(id) {
     const el = document.getElementById('convMsgs-' + id);
@@ -720,6 +950,83 @@ function openEditDept(id, name, short, max) {
     openModal('editDeptModal');
 }
 
+function openEditNav(id, label, url, isExternal, sortOrder) {
+    document.getElementById('editNavForm').action  = `/admin/nav-links/${id}`;
+    document.getElementById('editNavLabel').value  = label;
+    document.getElementById('editNavUrl').value    = url;
+    document.getElementById('editNavExternal').checked = isExternal;
+    document.getElementById('editNavOrder').value  = sortOrder;
+    openModal('editNavModal');
+}
+
+function toggleSectionFields() {
+    const type = document.getElementById('sectionType').value;
+    ['banner', 'hero', 'richtext', 'steps'].forEach(t => {
+        document.getElementById('fields-' + t).style.display = t === type ? 'block' : 'none';
+    });
+}
+
+let _stepIdx = 0;
+function addStepItem(title, body) {
+    const i = _stepIdx++;
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid var(--border);padding:8px;margin-bottom:8px;border-radius:var(--radius)';
+    const t = title ? title.replace(/"/g, '&quot;') : '';
+    const b = body ? body.replace(/"/g, '&quot;') : '';
+    div.innerHTML = `
+        <input type="text" name="items[${i}][title]" class="form-input" placeholder="Cím" style="margin-bottom:6px" value="${t}">
+        <input type="text" name="items[${i}][body]" class="form-input" placeholder="Leírás" value="${b}">
+        <button type="button" onclick="this.parentElement.remove()" class="btn btn-ghost" style="font-size:11px;padding:2px 6px;margin-top:6px">Törlés</button>
+    `;
+    document.getElementById('stepsContainer').appendChild(div);
+}
+
+function openNewSection() {
+    document.getElementById('sectionForm').reset();
+    document.getElementById('sectionForm').action = '/admin/page-sections';
+    document.getElementById('sectionMethod').value = 'POST';
+    document.getElementById('sectionModalTitle').textContent = 'Új szakasz';
+    document.getElementById('sectionType').disabled = false;
+    _stepIdx = 0;
+    document.getElementById('stepsContainer').innerHTML = '';
+    document.getElementById('sectionType').value = 'banner';
+    toggleSectionFields();
+    openModal('sectionModal');
+}
+
+function openEditSection(section) {
+    const form = document.getElementById('sectionForm');
+    form.reset();
+    form.action = `/admin/page-sections/${section.id}`;
+    document.getElementById('sectionMethod').value = 'PUT';
+    document.getElementById('sectionModalTitle').textContent = 'Szakasz szerkesztése';
+    document.getElementById('sectionType').value = section.type;
+    document.getElementById('sectionType').disabled = true;
+    document.getElementById('sectionOrder').value = section.sort_order;
+    _stepIdx = 0;
+    toggleSectionFields();
+
+    const d = section.data;
+    if (section.type === 'banner') {
+        form.text.value = d.text || '';
+        form.url.value = d.url || '';
+        form.variant.value = d.variant || 'dark';
+    } else if (section.type === 'hero') {
+        form.eyebrow.value = d.eyebrow || '';
+        form.title.value = d.title || '';
+        form.image_url.value = d.image_url || '';
+    } else if (section.type === 'richtext') {
+        form.richtext_heading.value = d.heading || '';
+        form.body.value = d.body || '';
+        form.show_seal.checked = !!d.show_seal;
+    } else if (section.type === 'steps') {
+        form.steps_heading.value = d.heading || '';
+        document.getElementById('stepsContainer').innerHTML = '';
+        (d.items || []).forEach(item => addStepItem(item.title, item.body));
+    }
+    openModal('sectionModal');
+}
+
 function showPanel(name) {
     document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.subnav-link').forEach(b => b.classList.remove('active'));
@@ -734,14 +1041,64 @@ function showPanel(name) {
     if (name === 'announcements' && !_annMde) {
         const el = document.getElementById('annContent');
         if (el) {
-            _annMde = new EasyMDE({
+            _annMde = createMde({
                 element: el,
-                spellChecker: false,
-                status: false,
                 placeholder: 'Tartalom (Markdown: **félkövér**, *dőlt*, # Cím, - Lista...)',
-                toolbar: ['bold','italic','heading','|','quote','unordered-list','ordered-list','|','link','|','preview'],
             });
         }
+    }
+
+    // Lazy-init EasyMDE for the Discord embed description
+    if (name === 'discord' && !_embedMde) {
+        const el = document.getElementById('embedDesc');
+        if (el) {
+            _embedMde = createMde({ element: el });
+            _embedMde.codemirror.on('change', updatePreview);
+        }
+    }
+
+    // Lazy-init EasyMDE for changelog entries
+    if (name === 'changelog' && !_changelogMde) {
+        const el = document.getElementById('changelogContent');
+        if (el) _changelogMde = createMde({ element: el });
+    }
+
+    // Lazy-load the audit log the first time that panel is opened
+    if (name === 'audit' && !_auditLoaded) {
+        _auditLoaded = true;
+        loadAuditLog();
+    }
+}
+
+function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+// Minimal Discord-markdown-to-HTML for audit log entries: **bold** and ```code blocks```
+function renderDiscordMd(text) {
+    return escapeHtml(text)
+        .replace(/```([\s\S]*?)```/g, (m, code) => '<pre style="white-space:pre-wrap;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-top:6px">' + code.trim() + '</pre>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+}
+
+let _auditLoaded = false;
+async function loadAuditLog() {
+    const list = document.getElementById('auditLogList');
+    list.innerHTML = '<span style="color:var(--fg-subtle);font-size:13px">Betöltés...</span>';
+    try {
+        const res = await fetch('{{ route('admin.audit-log') }}', { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        if (data.error) { list.innerHTML = '<span style="color:var(--destructive);font-size:13px">' + data.error + '</span>'; return; }
+        if (!data.length) { list.innerHTML = '<span style="color:var(--fg-subtle);font-size:13px">Nincs napló bejegyzés.</span>'; return; }
+        list.innerHTML = data.map(e => {
+            const ts = e.timestamp ? new Date(e.timestamp).toLocaleString('hu') : '';
+            return '<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--fg)">'
+                + '<div style="color:var(--fg-subtle);font-size:11px;margin-bottom:4px">' + escapeHtml(e.author) + ' · ' + ts + '</div>'
+                + renderDiscordMd(e.content)
+                + '</div>';
+        }).join('');
+    } catch (e) {
+        list.innerHTML = '<span style="color:var(--destructive);font-size:13px">Hálózati hiba.</span>';
     }
 }
 
@@ -824,7 +1181,7 @@ function updatePreview() {
     const color  = document.getElementById('embedColor')?.value  || '#34d399';
     const author = document.getElementById('embedAuthor')?.value.trim() || '';
     const title  = document.getElementById('embedTitle')?.value.trim()  || '';
-    const desc   = document.getElementById('embedDesc')?.value.trim()   || '';
+    const desc   = (_embedMde ? _embedMde.value() : document.getElementById('embedDesc')?.value || '').trim();
     const thumb  = document.getElementById('embedThumb')?.value.trim()  || '';
     const image  = document.getElementById('embedImage')?.value.trim()  || '';
     const footer = document.getElementById('embedFooter')?.value.trim() || '';
@@ -882,7 +1239,7 @@ function loadEmbed(msgJson, channelId) {
     if(e.color!==undefined) document.getElementById('embedColor').value='#'+e.color.toString(16).padStart(6,'0');
     document.getElementById('embedAuthor').value=e.author?.name||'';
     document.getElementById('embedTitle').value=e.title||'';
-    document.getElementById('embedDesc').value=e.description||'';
+    if (_embedMde) _embedMde.value(e.description||''); else document.getElementById('embedDesc').value=e.description||'';
     document.getElementById('embedThumb').value=e.thumbnail?.url||'';
     document.getElementById('embedImage').value=e.image?.url||'';
     document.getElementById('embedFooter').value=e.footer?.text||'';
@@ -896,7 +1253,8 @@ function loadEmbed(msgJson, channelId) {
 function clearEdit() {
     document.getElementById('editMessageId').value='';
     document.getElementById('editingBadge').style.display='none';
-    ['embedAuthor','embedTitle','embedDesc','embedThumb','embedImage','embedFooter'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['embedAuthor','embedTitle','embedThumb','embedImage','embedFooter'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    if (_embedMde) _embedMde.value(''); else document.getElementById('embedDesc').value='';
     document.getElementById('embedColor').value='#34d399';
     document.getElementById('fieldsContainer').innerHTML=''; fieldIdx=0;
     updatePreview();

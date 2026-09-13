@@ -12,6 +12,10 @@ services:
       - db_data:/var/www/html/database
       # Uploaded files, logs, compiled views
       - storage_data:/var/www/html/storage
+      # Shared with nginx below — must be the app image's own public/ (built
+      # assets + the storage symlink baked in at build time), not a host bind,
+      # or nginx would 404 on uploaded files and compiled assets.
+      - public_data:/var/www/html/public
     networks:
       - faction
     depends_on:
@@ -27,7 +31,7 @@ services:
       - "${APP_PORT:-80}:80"
     volumes:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./public:/var/www/html/public:ro
+      - public_data:/var/www/html/public:ro
       - storage_data:/var/www/html/storage:ro
     networks:
       - faction
@@ -61,6 +65,7 @@ services:
 volumes:
   db_data:
   storage_data:
+  public_data:
   # mysql_data:   # uncomment with MySQL block above
 
 networks:

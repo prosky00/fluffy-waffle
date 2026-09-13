@@ -43,6 +43,8 @@ return [
         'guild_id'                => env('DISCORD_GUILD_ID'),
         'announcement_channel_id' => env('DISCORD_ANNOUNCEMENT_CHANNEL_ID'),
         'reports_channel_id'      => env('DISCORD_REPORTS_CHANNEL_ID'),
+        'applications_channel_id' => env('DISCORD_APPLICATIONS_CHANNEL_ID'),
+        'audit_channel_id'        => env('DISCORD_AUDIT_CHANNEL_ID'),
         'member_role_id'          => env('DISCORD_MEMBER_ROLE_ID'),
     ],
 

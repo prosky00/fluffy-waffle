@@ -10,7 +10,7 @@ class Conversation extends Model
 
     public function participants()
     {
-        return $this->belongsToMany(User::class, 'conversation_participants');
+        return $this->belongsToMany(User::class, 'conversation_participants')->withPivot(['starred', 'trashed_at']);
     }
 
     public function messages()

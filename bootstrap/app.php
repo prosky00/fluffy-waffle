@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin'      => \App\Http\Middleware\AdminMiddleware::class,
             'suspended'  => \App\Http\Middleware\CheckSuspended::class,
             'supervisor' => \App\Http\Middleware\SupervisorMiddleware::class,
+            'member'     => \App\Http\Middleware\EnsureIsMember::class,
+            'hr'         => \App\Http\Middleware\EnsureIsHr::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -15,7 +15,7 @@ class User extends Authenticatable
         'username', 'password', 'is_suspended',
         'in_game_name', 'rank_id', 'department_id', 'department_rank_id',
         'is_department_leader', 'is_department_deputy',
-        'rank_up_date', 'is_admin', 'is_supervisor',
+        'rank_up_date', 'is_admin', 'is_supervisor', 'is_hr', 'is_member',
         'last_active_at', 'notification_preference',
     ];
 
@@ -28,6 +28,8 @@ class User extends Authenticatable
             'is_department_deputy' => 'boolean',
             'is_admin'             => 'boolean',
             'is_supervisor'        => 'boolean',
+            'is_hr'                => 'boolean',
+            'is_member'            => 'boolean',
             'is_suspended'         => 'boolean',
             'rank_up_date'         => 'datetime',
             'last_active_at'       => 'datetime',
@@ -38,6 +40,14 @@ class User extends Authenticatable
     public function isOnline(): bool
     {
         return $this->last_active_at && $this->last_active_at->gt(now()->subMinutes(5));
+    }
+
+    public function isHr(): bool
+    {
+        if ($this->is_admin || $this->is_hr) return true;
+
+        $hrDepartmentId = FactionSetting::singleton()->hr_department_id;
+        return $hrDepartmentId && $this->departments->contains('id', $hrDepartmentId);
     }
 
     public function wantsNotification(string $type = 'general'): bool

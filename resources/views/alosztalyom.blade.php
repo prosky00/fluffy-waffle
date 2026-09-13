@@ -94,7 +94,7 @@
                 <input type="hidden" name="dept_id" value="{{ $department->id }}">
                 <div style="margin-bottom:12px">
                     <label class="form-label">Szabályzat szövege</label>
-                    <textarea name="rules" class="form-textarea" rows="12">{{ strip_tags($department->rules ?? '') }}</textarea>
+                    <textarea name="rules" id="rulesContent" class="form-textarea" rows="12">{{ strip_tags($department->rules ?? '') }}</textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Mentés</button>
             </form>
@@ -102,7 +102,7 @@
         @endif
         @if($department->rules)
         <div class="card">
-            <div style="color:var(--fg-subtle);font-size:14px;line-height:1.7">{!! $department->rules !!}</div>
+            <div class="md-content" style="color:var(--fg-subtle);font-size:14px;line-height:1.7">{!! $department->rules !!}</div>
         </div>
         @else
         <div class="card"><p style="color:var(--fg-subtle);font-size:14px">Még nincs szabályzat.</p></div>
@@ -152,3 +152,12 @@
 </div>
 @endif
 @endsection
+
+@push('scripts')
+<script>
+document.querySelector('.tab-btn[data-tab="szabalyzat"]')?.addEventListener('click', function() {
+    const el = document.getElementById('rulesContent');
+    if (el) createMde({ element: el });
+}, { once: true });
+</script>
+@endpush

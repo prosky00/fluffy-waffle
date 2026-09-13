@@ -4,7 +4,7 @@ FROM node:20-alpine AS node-builder
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --ignore-scripts
+RUN npm install --ignore-scripts
 
 COPY resources/ resources/
 COPY vite.config.js ./
@@ -22,6 +22,7 @@ RUN apk add --no-cache \
     bash \
     git \
     curl \
+    nginx \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
@@ -71,6 +72,12 @@ RUN mkdir -p storage/logs storage/framework/{cache,sessions,views} storage/app/p
 # Entrypoint handles first-run setup
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+# Single-container nginx+php-fpm command, used only by the Render preview
+# (docker-compose runs them as two separate containers instead)
+COPY docker/nginx/preview.conf.template /etc/nginx/http.d/preview.conf.template
+COPY docker/render-cmd.sh /render-cmd.sh
+RUN chmod +x /render-cmd.sh
 
 EXPOSE 9000
 ENTRYPOINT ["/entrypoint.sh"]

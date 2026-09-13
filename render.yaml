@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: faction-preview
+    runtime: docker
+    branch: test
+    autoDeploy: true
+    # Render's Docker Command replaces the image's ENTRYPOINT too, not just CMD —
+    # so it must invoke entrypoint.sh itself (which runs first-boot setup, the
+    # APP_KEY fix, and demo seeding), which then hands off to render-cmd.sh
+    # (nginx + php-fpm in this one container — php artisan serve isn't reliable
+    # enough to stay up under real traffic).
+    dockerCommand: /entrypoint.sh /render-cmd.sh
+    envVars:
+      - key: APP_NAME
+        value: "Faction Dashboard (preview)"
+      - key: APP_ENV
+        value: local
+      - key: APP_DEBUG
+        value: "true"
+      - key: APP_KEY
+        sync: false
+      - key: APP_LOCALE
+        value: hu
+      - key: APP_FALLBACK_LOCALE
+        value: hu
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: DB_DATABASE
+        value: /var/www/html/database/database.sqlite
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: debug
+      - key: DEMO_SEED
+        value: "true"
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false

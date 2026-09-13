@@ -8,6 +8,7 @@
     @if($settings->favicon_url)
         <link rel="icon" href="{{ $settings->favicon_url }}">
     @endif
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
     <style>
         :root {
             --bg:          oklch(0.145 0 0);
@@ -275,7 +276,7 @@
     <nav>
         <div class="nav-group">
             <div class="nav-category">Állomány</div>
-            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                 Főoldal
             </a>
@@ -299,6 +300,10 @@
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Lekérdező
             </a>
+            <a href="{{ route('changelog') }}" class="nav-link {{ request()->is('valtozasnaplo*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Változásnapló
+            </a>
         </div>
 
         <div class="nav-group">
@@ -318,6 +323,20 @@
                 </a>
             @endif
         </div>
+
+        @if(auth()->user()->isHr())
+        <div class="nav-group">
+            <div class="nav-category">HR</div>
+            <a href="{{ route('hr.index') }}" class="nav-link {{ request()->is('hr*') ? 'active' : '' }}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span style="flex:1;text-align:left">HR</span>
+                @php $_pendingApps = \App\Models\FactionApplication::where('status', 'PENDING')->count(); @endphp
+                @if($_pendingApps > 0)
+                <span class="badge badge-red" style="font-size:10px;padding:1px 6px">{{ $_pendingApps }}</span>
+                @endif
+            </a>
+        </div>
+        @endif
 
         @if(auth()->user()->is_admin || auth()->user()->is_supervisor)
         <div class="nav-group">
@@ -377,12 +396,42 @@
     </div>
 </aside>
 
+<div class="modal-backdrop" id="notifDetailModal">
+    <div class="modal" style="max-width:420px">
+        <button class="modal-close" onclick="closeModal('notifDetailModal')">&times;</button>
+        <div class="modal-title">Értesítés</div>
+        <p id="notifDetailText" style="color:var(--fg);font-size:14px;line-height:1.6;white-space:pre-wrap;margin-bottom:8px"></p>
+        <p id="notifDetailTime" style="color:var(--fg-subtle);font-size:12px"></p>
+    </div>
+</div>
+
 <main class="main">
     @yield('content')
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script>
 const _csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+// Shared markdown-editor toolbar — every EasyMDE instance on the site uses this
+const MDE_TOOLBAR = ['bold', 'italic', 'heading', '|', 'link', 'image', 'code', '|', 'quote', 'unordered-list', '|', 'preview'];
+
+// EasyMDE hides the original <textarea> and never writes back into it, so a plain
+// form submit would send empty content. Every EasyMDE instance on the site must be
+// created through this helper so its value is kept in sync for native form submits.
+function createMde(opts) {
+    const mde = new EasyMDE(Object.assign({ spellChecker: false, status: false, toolbar: MDE_TOOLBAR }, opts));
+    mde.codemirror.on('change', () => { opts.element.value = mde.value(); });
+    return mde;
+}
+
+// Render any stored-as-markdown content into HTML — used by every page that displays
+// text authored through an EasyMDE field (announcements, rules, events, reports).
+document.querySelectorAll('.md-content').forEach(el => {
+    const raw = el.textContent.trim();
+    if (raw) el.innerHTML = marked.parse(raw);
+});
 
 document.addEventListener('click', function(e) {
     const menu = document.getElementById('userMenu');
@@ -402,6 +451,8 @@ function toggleBell(e) {
     if (dd.classList.contains('open')) loadNotifications();
 }
 
+let _notifCache = {};
+
 function loadNotifications() {
     fetch('{{ route("notifications.unread") }}')
         .then(r => r.json())
@@ -413,10 +464,11 @@ function loadNotifications() {
                 list.innerHTML = '<div class="bell-empty">Nincsenek értesítések.</div>';
                 return;
             }
+            data.notifications.forEach(n => _notifCache[n.id] = n);
             list.innerHTML = data.notifications.map(n => `
                 <div class="bell-notif-item" id="bni-${n.id}">
                     <span class="bell-notif-dot ${n.read ? 'read' : 'unread'}"></span>
-                    <span class="bell-notif-text">${escHtml(n.message)}</span>
+                    <span class="bell-notif-text" onclick="showNotifDetail(${n.id})" style="cursor:pointer">${escHtml(n.message)}</span>
                     <span class="bell-notif-time">${escHtml(n.time)}</span>
                     <span class="bell-notif-actions">
                         ${!n.read ? `<button class="bell-notif-btn" onclick="readNotif(${n.id})" title="Olvasott">✓</button>` : ''}
@@ -424,6 +476,17 @@ function loadNotifications() {
                     </span>
                 </div>`).join('');
         });
+}
+
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+function showNotifDetail(id) {
+    const n = _notifCache[id];
+    if (!n) return;
+    document.getElementById('notifDetailText').textContent = n.message;
+    document.getElementById('notifDetailTime').textContent = n.time;
+    openModal('notifDetailModal');
 }
 
 function escHtml(s) {

@@ -3,92 +3,185 @@
 
 @push('styles')
 <style>
-.chat-layout { display:flex; gap:0; height:calc(100vh - 96px); }
-.conv-list { width:280px; flex-shrink:0; background:var(--bg); border:1px solid var(--border); border-radius:12px 0 0 12px; overflow-y:auto; }
-.conv-item { padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .15s; }
-.conv-item:hover, .conv-item.active { background:var(--surface); }
-.conv-name { color:var(--fg); font-size:13px; font-weight:500; }
-.conv-preview { color:var(--fg-subtle); font-size:12px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.chat-area { flex:1; display:flex; flex-direction:column; background:var(--bg); border:1px solid var(--border); border-left:none; border-radius:0 12px 12px 0; }
-.chat-header { padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
-.chat-messages { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
-.msg-row { display:flex; gap:10px; align-items:flex-start; }
-.msg-row.own { flex-direction:row-reverse; }
-.msg-avatar { width:32px; height:32px; border-radius:50%; object-fit:cover; flex-shrink:0; }
-.msg-avatar-ph { width:32px; height:32px; border-radius:50%; background:var(--surface-3); display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:12px; font-weight:700; flex-shrink:0; }
-.msg-bubble { background:var(--surface); border-radius:8px; padding:8px 12px; max-width:70%; position:relative; }
-.msg-row.own .msg-bubble { background:var(--surface-2); }
-.msg-author { color:var(--fg-muted); font-size:11px; margin-bottom:4px; }
-.msg-content { color:var(--fg); font-size:13px; line-height:1.5; }
-.msg-time { color:var(--fg-subtle); font-size:10px; margin-top:4px; }
-.msg-del { background:none; border:none; color:var(--fg-subtle); font-size:12px; cursor:pointer; padding:2px 4px; }
-.msg-del:hover { color:var(--destructive); }
-.chat-input { padding:16px; border-top:1px solid var(--border); display:flex; gap:8px; }
-.chat-input textarea { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--fg); padding:8px 12px; font-size:14px; resize:none; font-family:inherit; }
-.chat-input textarea:focus { outline:none; border-color:var(--accent); }
-.no-chat { flex:1; display:flex; align-items:center; justify-content:center; color:var(--fg-subtle); font-size:14px; }
+.mail-search { margin-bottom:16px; }
+.mail-search input {
+    width:100%; max-width:480px; margin:0 auto; display:block;
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    color:var(--fg); padding:9px 14px; font-size:13px;
+}
+.mail-search input:focus { outline:none; border-color:var(--accent); }
+.mail-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+.mail-toolbar-title { color:var(--fg); font-size:14px; font-weight:600; }
+.mail-toolbar-count { color:var(--fg-subtle); font-size:12px; margin-left:6px; }
+.mail-toolbar-actions { margin-left:auto; display:flex; gap:8px; }
+
+.mail-layout { display:flex; gap:0; height:calc(100vh - 180px); min-height:420px; }
+
+.mail-folders { width:220px; flex-shrink:0; background:var(--bg); border:1px solid var(--border); border-radius:12px 0 0 12px; padding:14px 10px; overflow-y:auto; }
+.mail-compose-btn { width:100%; margin-bottom:14px; justify-content:center; }
+.mail-folder { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:6px; color:var(--fg-muted); font-size:13px; text-decoration:none; margin-bottom:2px; transition:background .1s; }
+.mail-folder:hover { background:var(--surface); color:var(--fg); }
+.mail-folder.active { background:var(--surface-2); color:var(--accent); font-weight:600; }
+.mail-folder svg { flex-shrink:0; }
+.mail-folder-count { margin-left:auto; color:var(--fg-subtle); font-size:11px; }
+.mail-folder-category { color:var(--fg-subtle); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin:16px 10px 6px; }
+
+.mail-list { width:300px; flex-shrink:0; background:var(--bg); border-top:1px solid var(--border); border-bottom:1px solid var(--border); border-left:1px solid var(--border); overflow-y:auto; }
+.mail-row { display:block; padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; text-decoration:none; transition:background .1s; }
+.mail-row:hover, .mail-row.active { background:var(--surface); }
+.mail-row-top { display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:3px; }
+.mail-row-name { color:var(--fg); font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mail-row-date { color:var(--fg-subtle); font-size:11px; white-space:nowrap; flex-shrink:0; }
+.mail-row-subject { color:var(--fg-muted); font-size:12px; font-weight:500; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mail-row-preview { color:var(--fg-subtle); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mail-empty { padding:24px 16px; color:var(--fg-subtle); font-size:13px; text-align:center; }
+
+.mail-reading { flex:1; display:flex; flex-direction:column; background:var(--bg); border:1px solid var(--border); border-radius:0 12px 12px 0; overflow:hidden; }
+.mail-reading-body { flex:1; overflow-y:auto; padding:24px; }
+.mail-subject { color:var(--fg); font-size:20px; font-weight:700; margin-bottom:18px; }
+.mail-thread-item { display:flex; gap:12px; padding-bottom:20px; margin-bottom:20px; border-bottom:1px solid var(--border); }
+.mail-thread-item:last-child { border-bottom:none; margin-bottom:0; padding-bottom:0; }
+.mail-avatar, .mail-avatar-ph { width:38px; height:38px; border-radius:50%; flex-shrink:0; object-fit:cover; }
+.mail-avatar-ph { background:var(--surface-3); display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:14px; font-weight:700; }
+.mail-meta { color:var(--fg-subtle); font-size:12px; line-height:1.7; margin-bottom:8px; }
+.mail-meta b { color:var(--fg-muted); font-weight:600; }
+.mail-body-text { color:var(--fg); font-size:14px; line-height:1.6; white-space:pre-wrap; }
+.mail-del { background:none; border:none; color:var(--fg-subtle); font-size:11px; cursor:pointer; padding:2px 4px; margin-top:6px; }
+.mail-del:hover { color:var(--destructive); }
+.mail-no-selection { flex:1; display:flex; align-items:center; justify-content:center; color:var(--fg-subtle); font-size:14px; }
+
+.mail-reply { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:8px; }
+.mail-reply textarea { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--fg); padding:8px 12px; font-size:14px; resize:none; font-family:inherit; }
+.mail-reply textarea:focus { outline:none; border-color:var(--accent); }
 </style>
 @endpush
 
 @section('content')
+@php
+    $folder = $folder ?? 'inbox';
+    $folderLabels = ['inbox' => 'Beérkezett', 'starred' => 'Csillagozott', 'sent' => 'Elküldött', 'trash' => 'Kuka'];
+@endphp
+
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
     <h1 style="color:var(--fg);font-size:24px;font-weight:700;flex:1">Intranet</h1>
-    <button class="btn btn-primary" onclick="openModal('newConvModal')">+ Új üzenet</button>
 </div>
 
-<div class="chat-layout">
-    {{-- Conversation list --}}
-    <div class="conv-list">
+<div class="mail-search">
+    <input type="text" id="mailSearchInput" placeholder="Keresés leveleidben..." oninput="filterMailList()">
+</div>
+
+<div class="mail-toolbar">
+    <span class="mail-toolbar-title">{{ $folderLabels[$folder] ?? 'Beérkezett' }}</span>
+    <span class="mail-toolbar-count">{{ count($conversations) }} levél</span>
+    @if(isset($conversation))
+    <div class="mail-toolbar-actions">
+        @php $isStarred = (bool) ($conversation->participants->firstWhere('id', auth()->id())?->pivot->starred ?? false); @endphp
+        <form method="POST" action="/intranet/{{ $conversation->id }}/star" style="display:inline">
+            @csrf
+            <button type="submit" class="btn btn-ghost" style="font-size:12px">{{ $isStarred ? '★' : '☆' }} Csillagozás</button>
+        </form>
+        <button type="button" class="btn btn-primary" style="font-size:12px" onclick="focusReply()">↩ Válasz</button>
+        <button type="button" class="btn btn-ghost" style="font-size:12px" onclick="focusReply()">↪ Válasz mindenkinek</button>
+        <form method="POST" action="/intranet/{{ $conversation->id }}/trash" onsubmit="return confirm('Áthelyezés a kukába?')" style="display:inline">
+            @csrf
+            <button type="submit" class="btn btn-ghost" style="font-size:12px">Kukába</button>
+        </form>
+        @if($folder === 'trash')
+        <form method="POST" action="/intranet/{{ $conversation->id }}/restore" style="display:inline">
+            @csrf
+            <button type="submit" class="btn btn-ghost" style="font-size:12px">Visszaállítás</button>
+        </form>
+        @endif
+    </div>
+    @endif
+</div>
+
+<div class="mail-layout">
+    {{-- Folders --}}
+    <div class="mail-folders">
+        <button class="btn btn-primary mail-compose-btn" onclick="openModal('newConvModal')">✎ Levélírás</button>
+
+        <a href="/intranet?folder=inbox" class="mail-folder {{ $folder==='inbox' ? 'active' : '' }}">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+            Beérkezett <span class="mail-folder-count">{{ $folderCounts['inbox'] ?? 0 }}</span>
+        </a>
+        <a href="/intranet?folder=starred" class="mail-folder {{ $folder==='starred' ? 'active' : '' }}">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Csillagozott <span class="mail-folder-count">{{ $folderCounts['starred'] ?? 0 }}</span>
+        </a>
+        <a href="/intranet?folder=sent" class="mail-folder {{ $folder==='sent' ? 'active' : '' }}">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Elküldött <span class="mail-folder-count">{{ $folderCounts['sent'] ?? 0 }}</span>
+        </a>
+        <a href="/intranet?folder=trash" class="mail-folder {{ $folder==='trash' ? 'active' : '' }}">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Kuka <span class="mail-folder-count">{{ $folderCounts['trash'] ?? 0 }}</span>
+        </a>
+
+        <div class="mail-folder-category">Szervezeti mappák</div>
+        @foreach($departments as $dept)
+        <a href="/intranet?dept={{ $dept->id }}" class="mail-folder">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            {{ $dept->name }}
+        </a>
+        @endforeach
+    </div>
+
+    {{-- Message list --}}
+    <div class="mail-list" id="mailList">
         @forelse($conversations as $conv)
         @php $lastMsg = $conv->messages->first(); @endphp
-        <a href="/intranet/{{ $conv->id }}" style="text-decoration:none">
-            <div class="conv-item {{ isset($conversation) && $conversation->id===$conv->id ? 'active' : '' }}">
-                <div class="conv-name">{{ $conv->displayName(auth()->user()) }}</div>
-                <div class="conv-preview">{{ $lastMsg ? Str::limit(strip_tags($lastMsg->content), 40) : 'Nincs üzenet' }}</div>
+        <a href="/intranet/{{ $conv->id }}?folder={{ $folder }}" class="mail-row-link" data-search="{{ strtolower($conv->displayName(auth()->user()).' '.($conv->name ?? '').' '.($lastMsg->content ?? '')) }}">
+            <div class="mail-row {{ isset($conversation) && $conversation->id===$conv->id ? 'active' : '' }}">
+                <div class="mail-row-top">
+                    <span class="mail-row-name">{{ $conv->displayName(auth()->user()) }}</span>
+                    <span class="mail-row-date">{{ $lastMsg?->created_at->format('m. d. H:i') }}</span>
+                </div>
+                @if($conv->name)
+                <div class="mail-row-subject">{{ $conv->name }}</div>
+                @endif
+                <div class="mail-row-preview">{{ $lastMsg ? Str::limit(strip_tags($lastMsg->content), 60) : 'Nincs üzenet' }}</div>
             </div>
         </a>
         @empty
-        <div style="padding:20px;color:var(--fg-subtle);font-size:13px">Nincs üzenetváltás.</div>
+        <div class="mail-empty">Nincs levél ebben a mappában.</div>
         @endforelse
     </div>
 
-    {{-- Chat area --}}
-    <div class="chat-area">
+    {{-- Reading pane --}}
+    <div class="mail-reading">
         @if(isset($conversation))
-        <div class="chat-header">
-            <div style="color:var(--fg);font-size:15px;font-weight:600">{{ $conversation->displayName(auth()->user()) }}</div>
-            <span class="badge badge-gray" style="margin-left:auto">{{ $conversation->typeLabel() }}</span>
-        </div>
-
-        <div class="chat-messages" id="msgContainer">
+        <div class="mail-reading-body" id="msgContainer">
+            <div class="mail-subject">{{ $conversation->name ?: $conversation->displayName(auth()->user()) }}</div>
             @foreach($messages as $msg)
-            <div class="msg-row {{ $msg->user_id === auth()->id() ? 'own' : '' }}" id="msg-{{ $msg->id }}">
-                @php $authorDisplayName = $msg->author->in_game_name ?? $msg->author->name; @endphp
+            @php $authorDisplayName = $msg->author->in_game_name ?? $msg->author->name; @endphp
+            <div class="mail-thread-item" id="msg-{{ $msg->id }}">
                 @if($msg->author->avatar)
-                    <img src="{{ $msg->author->avatar }}" class="msg-avatar">
+                    <img src="{{ $msg->author->avatar }}" class="mail-avatar">
                 @else
-                    <div class="msg-avatar-ph">{{ strtoupper(substr($authorDisplayName, 0, 1)) }}</div>
+                    <div class="mail-avatar-ph">{{ strtoupper(substr($authorDisplayName, 0, 1)) }}</div>
                 @endif
-                <div class="msg-bubble">
-                    <div class="msg-author">{{ $authorDisplayName }}</div>
-                    <div class="msg-content">{{ $msg->content }}</div>
-                    <div style="display:flex;align-items:center;gap:8px">
-                        <div class="msg-time">{{ $msg->created_at->format('H:i') }}</div>
-                        @if($msg->user_id === auth()->id() || auth()->user()->is_admin)
-                        <button class="msg-del" onclick="deleteMsg({{ $msg->id }})">Törlés</button>
-                        @endif
+                <div style="flex:1;min-width:0">
+                    <div class="mail-meta">
+                        <b>From:</b> {{ $authorDisplayName }}<br>
+                        <b>To:</b> {{ $conversation->displayName($msg->author) }}<br>
+                        <b>Date:</b> {{ $msg->created_at->format('Y. m. d. H:i') }}
                     </div>
+                    <div class="mail-body-text">{{ $msg->content }}</div>
+                    @if($msg->user_id === auth()->id() || auth()->user()->is_admin)
+                    <button class="mail-del" onclick="deleteMsg({{ $msg->id }})">Törlés</button>
+                    @endif
                 </div>
             </div>
             @endforeach
         </div>
 
-        <div class="chat-input">
-            <textarea id="msgInput" rows="2" placeholder="Írj üzenetet..." onkeydown="handleKey(event)"></textarea>
+        <div class="mail-reply">
+            <textarea id="msgInput" rows="2" placeholder="Válasz írása..." onkeydown="handleKey(event)"></textarea>
             <button class="btn btn-primary" onclick="sendMsg()">Küldés</button>
         </div>
         @else
-        <div class="no-chat">Válassz egy üzenetváltást a listából</div>
+        <div class="mail-no-selection">Válassz egy levelet a listából</div>
         @endif
     </div>
 </div>
@@ -97,7 +190,7 @@
 <div class="modal-backdrop" id="newConvModal">
     <div class="modal">
         <button class="modal-close" onclick="closeModal('newConvModal')">&times;</button>
-        <div class="modal-title">Új üzenet</div>
+        <div class="modal-title">Levélírás</div>
         <form method="POST" action="/intranet/conversations">
             @csrf
             <div style="margin-bottom:12px">
@@ -107,6 +200,10 @@
                     <option value="GROUP">Csoport</option>
                     <option value="RANK">Rang alapú</option>
                 </select>
+            </div>
+            <div style="margin-bottom:12px">
+                <label class="form-label">Tárgy (opcionális)</label>
+                <input type="text" name="name" class="form-input" placeholder="Tárgy">
             </div>
             <div id="convGroupField" style="display:none;margin-bottom:12px">
                 <label class="form-label">Alosztály / Csoport</label>
@@ -155,9 +252,6 @@
 
 @push('scripts')
 <script>
-function openModal(id)  { document.getElementById(id).classList.add('open') }
-function closeModal(id) { document.getElementById(id).classList.remove('open') }
-
 function toggleConvFields() {
     const type = document.getElementById('convType').value;
     document.getElementById('convGroupField').style.display    = type === 'GROUP' ? 'block' : 'none';
@@ -185,13 +279,24 @@ function onDeptChange() {
     }
 }
 
+function filterMailList() {
+    const q = document.getElementById('mailSearchInput').value.trim().toLowerCase();
+    document.querySelectorAll('#mailList .mail-row-link').forEach(a => {
+        a.style.display = !q || a.dataset.search.includes(q) ? '' : 'none';
+    });
+}
+
+function focusReply() {
+    const input = document.getElementById('msgInput');
+    if (input) { input.scrollIntoView({behavior:'smooth', block:'center'}); input.focus(); }
+}
+
 @if(isset($conversation))
 const convId  = {{ $conversation->id }};
 const authId  = {{ auth()->id() }};
 const isAdmin = {{ auth()->user()->is_admin ? 'true' : 'false' }};
 let lastId    = {{ $messages->last()?->id ?? 0 }};
 
-// Scroll to bottom
 const container = document.getElementById('msgContainer');
 if (container) container.scrollTop = container.scrollHeight;
 
@@ -215,13 +320,14 @@ function appendMsg(msg) {
     const isOwn = msg.author.id === authId;
     const div = document.createElement('div');
     div.id    = `msg-${msg.id}`;
-    div.className = `msg-row ${isOwn ? 'own' : ''}`;
+    div.className = 'mail-thread-item';
     const avatarHtml = msg.author.avatar
-        ? `<img src="${msg.author.avatar}" class="msg-avatar">`
-        : `<div class="msg-avatar-ph">${msg.author.name[0].toUpperCase()}</div>`;
+        ? `<img src="${msg.author.avatar}" class="mail-avatar">`
+        : `<div class="mail-avatar-ph">${msg.author.name[0].toUpperCase()}</div>`;
     const delBtn = (isOwn || isAdmin)
-        ? `<button class="msg-del" onclick="deleteMsg(${msg.id})">Törlés</button>` : '';
-    div.innerHTML = `${avatarHtml}<div class="msg-bubble"><div class="msg-author">${msg.author.name}</div><div class="msg-content">${msg.content}</div><div style="display:flex;align-items:center;gap:8px"><div class="msg-time">${msg.created_at}</div>${delBtn}</div></div>`;
+        ? `<button class="mail-del" onclick="deleteMsg(${msg.id})">Törlés</button>` : '';
+    div.innerHTML = `${avatarHtml}<div style="flex:1;min-width:0"><div class="mail-meta"><b>From:</b> ${msg.author.name}<br><b>To:</b> ${msg.to}<br><b>Date:</b> ${msg.created_at}</div><div class="mail-body-text"></div>${delBtn}</div>`;
+    div.querySelector('.mail-body-text').textContent = msg.content;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
     if (msg.id > lastId) lastId = msg.id;

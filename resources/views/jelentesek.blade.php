@@ -2,7 +2,6 @@
 @section('title', 'Jelentések')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.css">
 <style>
 .CodeMirror { background:var(--bg) !important; color:var(--fg) !important; border-color:var(--border) !important; }
 .editor-toolbar { background:var(--surface) !important; border-color:var(--border) !important; }
@@ -144,14 +143,12 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/easymde/2.18.0/easymde.min.js"></script>
 <script>
 let _newMde;
 function openModal(id) {
     document.getElementById(id).classList.add('open');
     if (id === 'newModal' && !_newMde) {
-        _newMde = new EasyMDE({ element: document.getElementById('newReportContent'), spellChecker:false, status:false,
-            toolbar:['bold','italic','heading','|','quote','unordered-list','ordered-list','|','link','|','preview'] });
+        _newMde = createMde({ element: document.getElementById('newReportContent') });
     }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open') }
