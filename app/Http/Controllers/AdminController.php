@@ -50,12 +50,15 @@ class AdminController extends Controller
         $allReports      = Report::with('author')->latest()->get();
         $changelogEntries = ChangelogEntry::with('author')->latest()->get();
         $dutyMembers     = $user->is_admin ? User::where('is_member', true)->orderBy('name')->get() : collect();
-        $dutyReportCounts = $user->is_admin
-            ? Report::where('created_at', '>=', now()->subDays(7))->selectRaw('author_id, count(*) as c')->groupBy('author_id')->pluck('c', 'author_id')
-            : collect();
         $dutyWeekStart   = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)request('week'))
             ? request('week')
             : DutyWeeklyEntry::currentWeekStart();
+        // Scoped to the calendar week being viewed (not "last 7 days from now"), so
+        // admins can check eligibility for a past week, not just the live/current one.
+        $dutyWeekEnd     = \Illuminate\Support\Carbon::parse($dutyWeekStart)->addDays(7)->toDateString();
+        $dutyReportCounts = $user->is_admin
+            ? Report::whereBetween('created_at', [$dutyWeekStart, $dutyWeekEnd])->selectRaw('author_id, count(*) as c')->groupBy('author_id')->pluck('c', 'author_id')
+            : collect();
         $dutyMinutes     = $user->is_admin ? DutyWeeklyEntry::where('week_start', $dutyWeekStart)->pluck('minutes', 'user_id') : collect();
         $dutyWeeks       = $user->is_admin
             ? DutyWeeklyEntry::select('week_start')->distinct()->pluck('week_start')

@@ -875,17 +875,33 @@
     <table class="table">
         <thead><tr>
             <th>Tag</th>
-            <th style="text-align:center">Heti jelentések</th>
+            <th style="text-align:center">Jelentések (e héten)</th>
             <th style="text-align:center">Szolgálati idő e héten (perc)</th>
+            <th style="text-align:center">Extra fizetés</th>
             <th style="text-align:right">Műveletek</th>
         </tr></thead>
         <tbody>
         @foreach($dutyMembers as $dm)
+        @php
+            $dmReports  = $dutyReportCounts[$dm->id] ?? 0;
+            $dmMinutes  = $dutyMinutes[$dm->id] ?? 0;
+            $dmEligible = ($factionSettings->duty_minutes_threshold === null || $dmMinutes >= $factionSettings->duty_minutes_threshold)
+                && ($factionSettings->required_reports_count === null || $dmReports >= $factionSettings->required_reports_count);
+        @endphp
         <tr class="duty-row" data-search="{{ strtolower($dm->in_game_name ?? $dm->name) }}">
             <td style="color:var(--fg);font-weight:500">{{ $dm->in_game_name ?? $dm->name }}</td>
-            <td style="text-align:center;color:var(--fg-subtle)">{{ $dutyReportCounts[$dm->id] ?? 0 }}</td>
+            <td style="text-align:center;color:var(--fg-subtle)">{{ $dmReports }}</td>
             <td style="text-align:center">
-                <input type="number" name="minutes[{{ $dm->id }}]" class="form-input" min="0" value="{{ $dutyMinutes[$dm->id] ?? 0 }}" style="max-width:140px;margin:0 auto">
+                <input type="number" name="minutes[{{ $dm->id }}]" class="form-input" min="0" value="{{ $dmMinutes }}" style="max-width:140px;margin:0 auto">
+            </td>
+            <td style="text-align:center">
+                @if($factionSettings->duty_minutes_threshold === null && $factionSettings->required_reports_count === null)
+                    <span style="color:var(--fg-subtle);font-size:12px">—</span>
+                @elseif($dmEligible)
+                    <span class="badge badge-green">Jogosult</span>
+                @else
+                    <span class="badge badge-red">Nem jogosult</span>
+                @endif
             </td>
             <td style="text-align:right">
                 <button type="button" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="submitSingleDuty({{ $dm->id }})">Mentés</button>
@@ -894,7 +910,7 @@
         @endforeach
 
         @if($dutyMembers->isEmpty())
-        <tr><td colspan="4" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs tag.</td></tr>
+        <tr><td colspan="5" style="padding:32px;text-align:center;color:var(--fg-subtle)">Nincs tag.</td></tr>
         @endif
         </tbody>
     </table>
