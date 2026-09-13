@@ -4,7 +4,7 @@ FROM node:20-alpine AS node-builder
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --ignore-scripts
+RUN npm install --ignore-scripts
 
 COPY resources/ resources/
 COPY vite.config.js ./
